@@ -3,7 +3,7 @@ name: Deploy to homelab
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   PROJECT_NAME: nutrition-tracking-api
