@@ -94,8 +94,8 @@ def get_session(session_generator: Session = Depends(get_session_generator)) -> 
 
     """
     with session_generator as session:
-        if settings.DB_SCHEMA:
-            session.execute(text(f"SET search_path TO {settings.DB_SCHEMA}"))
+        if settings.POSTGRES_SCHEMA:
+            session.execute(text(f"SET search_path TO {settings.POSTGRES_SCHEMA}"))
         try:
             yield session
             session.commit()

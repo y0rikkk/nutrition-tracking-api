@@ -1,0 +1,34 @@
+name: Deploy to homelab
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  PROJECT_NAME: nutrition-tracking-api
+
+jobs:
+  deploy:
+    runs-on: homelab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+          ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          EOF
+
+      - name: Build and restart services
+        run: docker compose -p ${{ env.PROJECT_NAME }} up --build -d
+
+      - name: Clean up old app images
+        run: docker image prune -f --filter "label=com.docker.compose.project=${{ env.PROJECT_NAME }}"

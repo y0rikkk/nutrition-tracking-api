@@ -23,17 +23,17 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Database
-    DB_HOST: str = ""
-    DB_PORT: int = 5432
-    DB_USER: str = ""
-    DB_PASSWORD: str = ""
-    DB_NAME: str = ""
-    DB_SCHEMA: str | None = None
+    POSTGRES_HOST: str = ""
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DB: str = ""
+    POSTGRES_SCHEMA: str | None = None
 
     @property
     def database_url(self) -> str:
         """Construct database URL."""
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     test_database_url: str = "postgresql://postgres:password@localhost:5432/nutrition_tracking_api_test"
 
