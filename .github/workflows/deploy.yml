@@ -30,5 +30,8 @@ jobs:
       - name: Build and restart services
         run: docker compose -p ${{ env.PROJECT_NAME }} up --build -d
 
+      - name: Run database migrations
+        run: docker compose -p ${{ env.PROJECT_NAME }} exec -T api alembic upgrade head
+
       - name: Clean up old app images
         run: docker image prune -f --filter "label=com.docker.compose.project=${{ env.PROJECT_NAME }}"
