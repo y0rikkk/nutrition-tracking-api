@@ -31,6 +31,8 @@ RUN \
 
 # Copy application code
 COPY ./nutrition_tracking_api ./nutrition_tracking_api
+COPY alembic/ ./alembic/
+COPY alembic.ini ./alembic.ini
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app \
