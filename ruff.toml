@@ -1,0 +1,42 @@
+line-length = 120
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "ANN401", # allow any return
+    # Дальше ингоры документаций
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D203",
+    "D205",
+    "D212",
+    "D400",
+    "D415",
+    "D213",
+    # Игноры русских символов в коде (комментарии)
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # generic аннотации без импорта из __future__
+    "FA100",
+    "FA102",
+    "COM812",
+    "FBT001",  # bool as arg
+    "FIX002",  # TODO
+]
+exclude = []
+
+[lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "PLR2004"]  # Возможность использоваться assert в тестах
+
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
+
+[lint.pylint]
+max-statements = 70
