@@ -25,6 +25,7 @@ jobs:
           POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
           ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
           EOF
 
       - name: Build and restart services
