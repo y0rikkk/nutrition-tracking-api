@@ -81,8 +81,9 @@ class User(Base):
     add_actions_author = False
 
     email: Mapped[str | None]
-    username: Mapped[str]
-    access_token: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    password_hash: Mapped[str | None] = mapped_column(nullable=True)
+    access_token: Mapped[str | None] = mapped_column(unique=True, nullable=True)
     access_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_superuser: Mapped[bool]
     is_service_user: Mapped[bool]

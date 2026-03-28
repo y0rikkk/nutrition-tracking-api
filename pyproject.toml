@@ -27,6 +27,7 @@ prometheus-fastapi-instrumentator = "^7.0.0"
 sentry-sdk = "^2.52.0"
 pyjwt = {extras = ["crypto"], version = "^2.11.0"}
 httpx = "^0.25.0"
+bcrypt = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 # Testing
@@ -77,6 +78,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers --cov=nutrition_tracking_api --cov-report=term-missing --cov-report=html"
+filterwarnings = [
+    "ignore::pydantic.warnings.UnsupportedFieldAttributeWarning",
+]
 
 [tool.coverage.run]
 omit = [

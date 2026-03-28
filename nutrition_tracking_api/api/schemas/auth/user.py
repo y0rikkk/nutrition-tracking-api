@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from nutrition_tracking_api.api.schemas.auth.roles import RoleOut
 from nutrition_tracking_api.api.schemas.filters import BasePaginationFilter
@@ -15,6 +15,10 @@ class UserCreate(BaseModel):
     """Schema for creating a user."""
 
     username: str
+    password: Annotated[
+        str | None, Field(exclude=True)
+    ] = None  # plain-text, хешируется в _handle_pre_create; в model_dump не попадает
+    password_hash: str | None = None  # хеш пароля, записывается в БД
     access_token: str | None = None
     is_superuser: bool = False
     is_service_user: bool = False
@@ -48,7 +52,7 @@ class UserOut(BaseModel):
 
     id: UUID
     username: str
-    access_token: str
+    access_token: str | None
     access_token_expires_at: datetime | None
     is_superuser: bool
     is_service_user: bool
@@ -82,7 +86,7 @@ class UserOutMulti(BaseModel):
 class UserRoutePermissions(BaseModel):
     id: UUID
     username: str
-    access_token: str
+    access_token: str | None
     access_token_expires_at: datetime | None
     is_service_user: bool
     is_superuser: bool

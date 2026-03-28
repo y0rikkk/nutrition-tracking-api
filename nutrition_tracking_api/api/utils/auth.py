@@ -1,78 +1,134 @@
-"""Утилиты для аутентификации (JWT, токены)."""
+"""Утилиты для аутентификации (JWT, пароли, токены)."""
 
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
+import bcrypt
 import jwt
-from jwt.algorithms import RSAAlgorithm
 
 from nutrition_tracking_api.api.exceptions import AuthTokenExpiredError, AuthTokenValidateError
-from nutrition_tracking_api.api.schemas.auth.common import SecretConfig
-from nutrition_tracking_api.api.schemas.auth.user import UserCreate
+from nutrition_tracking_api.settings import settings
 
 
-def get_user_data_from_jwt_token(token: str, key: SecretConfig) -> UserCreate:
+def hash_password(password: str) -> str:
     """
-    Декодировать TWork JWT токен и создать UserCreate схему.
+    Хешировать пароль через bcrypt.
+
+    Args:
+    ----
+        password: Пароль в открытом виде
+
+    Returns:
+    -------
+        Хеш пароля (UTF-8 строка)
+
+    """
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Проверить пароль против хеша.
+
+    Args:
+    ----
+        plain_password: Пароль в открытом виде
+        hashed_password: Хеш из базы данных
+
+    Returns:
+    -------
+        True если пароль совпадает
+
+    """
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+
+def create_access_token(user_id: str, username: str) -> str:
+    """
+    Создать JWT access токен (HS256, короткий срок жизни).
+
+    Payload:
+        sub: user_id (UUID строка)
+        username: имя пользователя
+        type: "access"
+        exp: время истечения
+        iat: время создания
+
+    Args:
+    ----
+        user_id: UUID пользователя
+        username: Имя пользователя
+
+    Returns:
+    -------
+        Подписанный JWT токен
+
+    """
+    now = datetime.now(tz=timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "username": username,
+        "type": "access",
+        "exp": now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
+        "iat": now,
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def create_refresh_token(user_id: str) -> tuple[str, str]:
+    """
+    Создать JWT refresh токен (HS256, длинный срок жизни).
+
+    Refresh токен содержит уникальный jti (JWT ID), который сохраняется
+    в БД для возможности отзыва (logout, rotation).
+
+    Args:
+    ----
+        user_id: UUID пользователя
+
+    Returns:
+    -------
+        Кортеж (токен, jti). jti нужно сохранить в БД.
+
+    """
+    now = datetime.now(tz=timezone.utc)
+    jti = str(uuid4())
+    payload = {
+        "sub": str(user_id),
+        "jti": jti,
+        "type": "refresh",
+        "exp": now + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
+        "iat": now,
+    }
+    token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return token, jti
+
+
+def decode_token(token: str) -> dict:
+    """
+    Декодировать и верифицировать JWT токен (HS256).
 
     Args:
     ----
         token: JWT токен
-        key: RSA публичный ключ из JWKS
 
     Returns:
     -------
-        UserCreate схема с данными пользователя
+        Payload словарь
+
+    Raises:
+    ------
+        AuthTokenExpiredError: Если токен истёк
+        AuthTokenValidateError: Если токен невалиден (неверная подпись, формат и т.д.)
 
     """
-    public_key = RSAAlgorithm.from_jwk(key.model_dump())
     try:
-        payload = jwt.decode(
-            token,
-            public_key,  # type: ignore[arg-type]
-            algorithms=[key.alg],
-            options={"verify_signature": True, "verify_aud": False, "exp": True},  # type: ignore[arg-type]
-        )
+        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except jwt.exceptions.ExpiredSignatureError as e:
         raise AuthTokenExpiredError from e
-
-    except jwt.exceptions.InvalidSignatureError as e:
+    except jwt.exceptions.InvalidTokenError as e:
         raise AuthTokenValidateError from e
-
-    username = payload.get("uname") or payload.get("sub") or ""
-    exp = payload.get("exp")
-    ad_login = payload.get("ad", {}).get("login") if isinstance(payload.get("ad"), dict) else payload.get("ad_login")
-    master_id = payload.get("master_id")
-    full_name = payload.get("full_name") or payload.get("name")
-    email = payload.get("email")
-
-    expires_at = datetime.fromtimestamp(exp).astimezone() if exp else None
-
-    return UserCreate(
-        username=username,
-        access_token=token,
-        access_token_expires_at=expires_at,
-        ad_login=ad_login,
-        master_id=master_id,
-        full_name=full_name,
-        email=email,
-    )
-
-
-def get_jwt_token_header_mapping(token: str) -> dict[str, str]:
-    """
-    Извлечь заголовок JWT токена без верификации.
-
-    Args:
-    ----
-        token: JWT токен
-
-    Returns:
-    -------
-        Словарь с заголовком токена (alg, kid, etc.)
-
-    """
-    return jwt.get_unverified_header(token)
 
 
 def create_token(username: str) -> str:
@@ -85,7 +141,7 @@ def create_token(username: str) -> str:
 
     Returns:
     -------
-        Уникальный токен
+        Уникальный токен вида svc-{username}-{random_hex}
 
     """
     return f"svc-{username}-{secrets.token_hex(16)}"

@@ -5,21 +5,50 @@ from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Any
 
+import jwt
 from fastapi.testclient import TestClient
-from pytest_mock import MockerFixture
 
 from nutrition_tracking_api.api.schemas.auth.user import UserOut
 from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
+from nutrition_tracking_api.settings import settings
 from tests.factories.auth.policy import PolicyFactory
 from tests.factories.auth.role import RoleFactory, RolePayloadFactory
-from tests.factories.auth.user import (
-    TEST_JWT_SECRET_CONFIG,
-    TEST_JWT_SECRET_CONFIG_WRONG,
-    UserFactory,
-    UserPayloadFactory,
-)
+from tests.factories.auth.user import UserFactory
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_expired_access_token(user_id: str, username: str) -> str:
+    """Создать JWT access токен с истекшим сроком жизни."""
+    payload = {
+        "sub": str(user_id),
+        "username": username,
+        "type": "access",
+        "exp": datetime.now(tz=timezone.utc) - timedelta(hours=1),
+        "iat": datetime.now(tz=timezone.utc) - timedelta(hours=2),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def _make_wrong_signature_token(user_id: str, username: str) -> str:
+    """Создать JWT подписанный неправильным ключом."""
+    payload = {
+        "sub": str(user_id),
+        "username": username,
+        "type": "access",
+        "exp": datetime.now(tz=timezone.utc) + timedelta(minutes=30),
+        "iat": datetime.now(tz=timezone.utc),
+    }
+    return jwt.encode(payload, "wrong-secret-key-at-least-32-chars", algorithm="HS256")
+
+
+# ---------------------------------------------------------------------------
+# Тесты JWT-аутентификации
+# ---------------------------------------------------------------------------
 
 
 def test_auth_existing_user(client: TestClient, user: User) -> None:
@@ -33,87 +62,29 @@ def test_auth_existing_user(client: TestClient, user: User) -> None:
     assert resp.json()["id"] == str(user.id)
 
 
-def test_auth_new_user(client: TestClient, mocker: MockerFixture) -> None:
-    """Пользователь НЕ существует в БД — создаётся на лету после декодирования JWT."""
-    user_payload = UserPayloadFactory(access_token="new_user_token")  # noqa: S106
-    default_role = RoleFactory(is_default=True)
-
-    mocker.patch(
-        "nutrition_tracking_api.api.services.auth.authorization.AuthService.get_decoded_user_from_twork_jwt_token",
-        return_value=user_payload,
-    )
+def test_expired_token_authentication(client: TestClient, user: User) -> None:
+    """JWT с истекшим exp → 401."""
+    expired_token = _make_expired_access_token(str(user.id), user.username)
 
     resp = client.get(
         "/auth/users/me/",
-        headers={"Authorization": "Bearer new_user_token"},
-    )
-
-    assert resp.status_code == HTTPStatus.OK
-    user_id = resp.json()["id"]
-
-    # Verify default role was assigned
-    resp_user = client.get(f"/auth/users/{user_id}")
-    assert resp_user.status_code == HTTPStatus.OK
-    user_data = resp_user.json()
-    assert len(user_data["roles"]) == 1
-    assert user_data["roles"][0]["id"] == str(default_role.id)
-
-
-def test_auth_new_user_real_decode(client: TestClient, mocker: MockerFixture) -> None:
-    """Пользователь НЕ в БД — JWT декодируется реально через TEST_JWT_SECRET_CONFIG."""
-    user_payload = UserPayloadFactory()
-    default_role = RoleFactory(is_default=True)
-
-    mocker.patch(
-        "nutrition_tracking_api.api.services.auth.authorization.get_secret_config",
-        return_value=TEST_JWT_SECRET_CONFIG,
-    )
-
-    resp = client.get(
-        "/auth/users/me/",
-        headers={"Authorization": f"Bearer {user_payload.access_token}"},
-    )
-
-    assert resp.status_code == HTTPStatus.OK
-    user_id = resp.json()["id"]
-
-    resp_user = client.get(f"/auth/users/{user_id}")
-    assert resp_user.status_code == HTTPStatus.OK
-    user_data = resp_user.json()
-    assert len(user_data["roles"]) == 1
-    assert user_data["roles"][0]["id"] == str(default_role.id)
-    assert user_data["username"] == user_payload.username
-
-
-def test_user_bad_verify(client: TestClient, mocker: MockerFixture) -> None:
-    """Ключ в JWKS найден, но подпись токена невалидна (другой ключ) → 401."""
-    user_payload = UserPayloadFactory()
-
-    mocker.patch(
-        "nutrition_tracking_api.api.services.auth.authorization.get_secret_config",
-        return_value=TEST_JWT_SECRET_CONFIG_WRONG,
-    )
-
-    resp = client.get(
-        "/auth/users/me/",
-        headers={"Authorization": f"Bearer {user_payload.access_token}"},
-    )
-
-    assert resp.status_code == HTTPStatus.UNAUTHORIZED
-    assert resp.json() == {"detail": "Токен для авторизации невалиден"}
-
-
-def test_expired_token_authentication(client: TestClient) -> None:
-    """Пользователь в БД, но токен истёк."""
-    user = UserFactory(access_token_expires_at=datetime.now(tz=timezone.utc) - timedelta(hours=1))
-
-    resp = client.get(
-        "/auth/users/me/",
-        headers={"Authorization": f"Bearer {user.access_token}"},
+        headers={"Authorization": f"Bearer {expired_token}"},
     )
 
     assert resp.status_code == HTTPStatus.UNAUTHORIZED
     assert resp.json() == {"detail": "Токен авторизации истек"}
+
+
+def test_invalid_signature_token(client: TestClient, user: User) -> None:
+    """JWT подписан неправильным ключом → 401."""
+    bad_token = _make_wrong_signature_token(str(user.id), user.username)
+
+    resp = client.get(
+        "/auth/users/me/",
+        headers={"Authorization": f"Bearer {bad_token}"},
+    )
+
+    assert resp.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_user_bad_permissions(client: TestClient, user_with_permissions: UserOut) -> None:
@@ -246,6 +217,133 @@ def test_get_me(
             },
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# Тесты register / login / refresh / logout
+# ---------------------------------------------------------------------------
+
+
+def test_register(client: TestClient) -> None:
+    """Публичная регистрация создаёт пользователя и возвращает пару токенов."""
+    payload = {"username": "newuser", "password": "securepass123"}
+    resp = client.post("/auth/register/", json=payload)
+
+    assert resp.status_code == HTTPStatus.CREATED
+    data = resp.json()
+    assert data["access_token"]
+    assert data["refresh_token"]
+    assert data["token_type"] == "bearer"
+    assert data["expires_in"] == settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+
+def test_register_duplicate_username(client: TestClient) -> None:
+    """Повторная регистрация с тем же именем → 400."""
+    UserFactory(username="existinguser")
+    payload = {"username": "existinguser", "password": "securepass123"}
+    resp = client.post("/auth/register/", json=payload)
+
+    assert resp.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_login_success(client: TestClient) -> None:
+    """Логин с правильным паролем возвращает токены."""
+    from nutrition_tracking_api.api.utils.auth import hash_password
+
+    UserFactory(username="loginuser", password_hash=hash_password("mypassword123"))
+
+    resp = client.post("/auth/login/", json={"username": "loginuser", "password": "mypassword123"})
+
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    assert data["access_token"]
+    assert data["refresh_token"]
+
+
+def test_login_wrong_password(client: TestClient) -> None:
+    """Логин с неправильным паролем → 401."""
+    from nutrition_tracking_api.api.utils.auth import hash_password
+
+    UserFactory(username="loginuser2", password_hash=hash_password("correctpassword"))
+
+    resp = client.post("/auth/login/", json={"username": "loginuser2", "password": "wrongpassword"})
+
+    assert resp.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_login_nonexistent_user(client: TestClient) -> None:
+    """Логин с несуществующим пользователем → 401."""
+    resp = client.post("/auth/login/", json={"username": "ghost", "password": "anypassword"})
+
+    assert resp.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_refresh_token(client: TestClient) -> None:
+    """Refresh токен обменивается на новую пару токенов (token rotation)."""
+    # Регистрируемся чтобы получить refresh token
+    resp = client.post("/auth/register/", json={"username": "refreshuser", "password": "pass12345"})
+    assert resp.status_code == HTTPStatus.CREATED
+    refresh_token = resp.json()["refresh_token"]
+
+    # Обмениваем refresh token
+    resp2 = client.post("/auth/token/refresh/", json={"refresh_token": refresh_token})
+
+    assert resp2.status_code == HTTPStatus.OK
+    new_data = resp2.json()
+    assert new_data["access_token"]
+    assert new_data["refresh_token"]
+
+    # Старый refresh token теперь отозван — нельзя использовать снова
+    resp3 = client.post("/auth/token/refresh/", json={"refresh_token": refresh_token})
+    assert resp3.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_refresh_token_used_twice(client: TestClient) -> None:
+    """Использованный refresh токен нельзя использовать повторно → 401."""
+    resp = client.post("/auth/register/", json={"username": "rotation_user", "password": "pass12345"})
+    refresh_token = resp.json()["refresh_token"]
+
+    # Первое использование — успех
+    resp2 = client.post("/auth/token/refresh/", json={"refresh_token": refresh_token})
+    assert resp2.status_code == HTTPStatus.OK
+
+    # Второе использование — старый токен уже отозван
+    resp3 = client.post("/auth/token/refresh/", json={"refresh_token": refresh_token})
+    assert resp3.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_logout(client: TestClient) -> None:
+    """Logout отзывает refresh токен — дальнейший refresh невозможен."""
+    resp = client.post("/auth/register/", json={"username": "logoutuser", "password": "pass12345"})
+    refresh_token = resp.json()["refresh_token"]
+
+    # Logout
+    resp_logout = client.post("/auth/logout/", json={"refresh_token": refresh_token})
+    assert resp_logout.status_code == HTTPStatus.NO_CONTENT
+
+    # Refresh после logout → 401
+    resp_refresh = client.post("/auth/token/refresh/", json={"refresh_token": refresh_token})
+    assert resp_refresh.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_access_token_valid_after_register(client: TestClient) -> None:
+    """Access token полученный при регистрации работает для защищённых endpoints."""
+    RoleFactory(is_default=True)
+    resp = client.post("/auth/register/", json={"username": "apiuser", "password": "pass12345"})
+    access_token = resp.json()["access_token"]
+
+    # /auth/users/me/ доступен без дополнительных прав
+    resp_me = client.get(
+        "/auth/users/me/",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert resp_me.status_code == HTTPStatus.OK
+    assert resp_me.json()["username"] == "apiuser"
+
+
+# ---------------------------------------------------------------------------
+# Тесты CRUD: роли, политики, история
+# ---------------------------------------------------------------------------
 
 
 def test_add_remove_role(client: TestClient, user: User, role: Role) -> None:

@@ -22,7 +22,7 @@ from nutrition_tracking_api.api.schemas.auth.user import (
 )
 from nutrition_tracking_api.api.services.auth.permissions import get_matcher_value
 from nutrition_tracking_api.api.services.base import BaseCRUDService
-from nutrition_tracking_api.api.utils.auth import create_token
+from nutrition_tracking_api.api.utils.auth import create_token, hash_password, verify_password
 from nutrition_tracking_api.api.utils.utils import dump_model
 from nutrition_tracking_api.app_schemas import RequestState
 from nutrition_tracking_api.orm.models.auth import User
@@ -97,27 +97,6 @@ class UserService(
         """
         return self.resource_crud.get_one_by_filter({"username": username}, with_for_update=False)
 
-    def create_or_update(self, user_data: UserCreate) -> User:
-        """
-        Создать нового пользователя или обновить токен существующего.
-
-        Args:
-        ----
-            user_data: Данные пользователя из JWT
-
-        Returns:
-        -------
-            ORM объект пользователя
-
-        """
-        try:
-            existing_user = self.get_by_username(user_data.username)
-            db_user = self.resource_crud.update(existing_user.id, user_data.model_dump(exclude_unset=True))
-        except NoResultFound:
-            db_user = self.resource_crud.create(user_data.model_dump())
-            self.add_default_role(db_user.id)
-        return db_user
-
     def add_default_role(self, user_id: UUID) -> None:
         """
         Назначить роль по умолчанию новому пользователю.
@@ -191,6 +170,7 @@ class UserService(
     def _handle_pre_create(self, create_data: UserCreate) -> None:
         """
         Для service users — генерировать токен, не устанавливать expires_at.
+        Для обычных users — хешировать пароль если передан.
 
         Args:
         ----
@@ -201,6 +181,70 @@ class UserService(
         if create_data.is_service_user:
             create_data.access_token = create_token(create_data.username)
             create_data.access_token_expires_at = None
+        if create_data.password:
+            create_data.password_hash = hash_password(create_data.password)
+            create_data.password = None  # не хранить пароль в открытом виде
+
+    def authenticate(self, username: str, password: str) -> User:
+        """
+        Проверить логин и пароль пользователя.
+
+        Args:
+        ----
+            username: Имя пользователя
+            password: Пароль в открытом виде
+
+        Returns:
+        -------
+            ORM объект пользователя при успешной аутентификации
+
+        Raises:
+        ------
+            AuthTokenValidateError: Если пользователь не найден или пароль неверный
+
+        """
+        from nutrition_tracking_api.api.exceptions import AuthTokenValidateError
+
+        try:
+            user = self.get_by_username(username)
+        except Exception as e:
+            raise AuthTokenValidateError from e
+
+        if not user.password_hash or not verify_password(password, user.password_hash):
+            raise AuthTokenValidateError
+
+        return user
+
+    def create_with_password(
+        self, username: str, password: str, email: str | None = None, full_name: str | None = None
+    ) -> User:
+        """
+        Создать нового пользователя с паролем (публичная регистрация).
+
+        Args:
+        ----
+            username: Имя пользователя
+            password: Пароль в открытом виде (будет захеширован)
+            email: Email (опционально)
+            full_name: Полное имя (опционально)
+
+        Returns:
+        -------
+            ORM объект нового пользователя
+
+        """
+        db_user = self.resource_crud.create(
+            {
+                "username": username,
+                "password_hash": hash_password(password),
+                "email": email,
+                "full_name": full_name,
+                "is_superuser": False,
+                "is_service_user": False,
+            }
+        )
+        self.add_default_role(db_user.id)
+        return self.resource_crud.get(db_user.id, with_for_update=False)
 
     def get_user_routes_permissions(self, user: User) -> UserRoutePermissions:
         results: dict[str, dict[str, list[Any]]] = defaultdict(dict)
