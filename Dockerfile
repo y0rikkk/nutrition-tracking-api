@@ -7,7 +7,7 @@ ARG ENVIRONMENT=production
 ENV ENVIRONMENT=${ENVIRONMENT}
 
 # Install poetry
-RUN pip install poetry
+RUN pip install poetry -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 WORKDIR /app
 
