@@ -62,6 +62,13 @@ class AuthTokenValidateError(BaseError):
     detail = "Токен для авторизации невалиден"
 
 
+class WrongCredentialsError(BaseError):
+    """Неверный логин или пароль."""
+
+    status_code = HTTPStatus.UNAUTHORIZED
+    detail = "Неверный логин или пароль"
+
+
 class AuthTokenExpiredError(BaseError):
     """Токен авторизации истек."""
 

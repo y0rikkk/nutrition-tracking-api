@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from nutrition_tracking_api.api.crud.auth.role import RoleCRUD
 from nutrition_tracking_api.api.crud.auth.user import UserCRUD
-from nutrition_tracking_api.api.exceptions import ObjectNotFoundError
+from nutrition_tracking_api.api.exceptions import ObjectNotFoundError, WrongCredentialsError
 from nutrition_tracking_api.api.schemas.auth.common import PermissionRules
 from nutrition_tracking_api.api.schemas.auth.user import (
     UserCreate,
@@ -200,18 +200,16 @@ class UserService(
 
         Raises:
         ------
-            AuthTokenValidateError: Если пользователь не найден или пароль неверный
+            WrongCredentialsError: Если пользователь не найден или пароль неверный
 
         """
-        from nutrition_tracking_api.api.exceptions import AuthTokenValidateError
-
         try:
             user = self.get_by_username(username)
         except Exception as e:
-            raise AuthTokenValidateError from e
+            raise WrongCredentialsError from e
 
         if not user.password_hash or not verify_password(password, user.password_hash):
-            raise AuthTokenValidateError
+            raise WrongCredentialsError
 
         return user
 
