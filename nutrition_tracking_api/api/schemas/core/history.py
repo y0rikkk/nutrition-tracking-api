@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from nutrition_tracking_api.api.schemas.auth.common import AuthorOut
+from nutrition_tracking_api.api.schemas.auth.common import UserShortOut
 from nutrition_tracking_api.api.schemas.filters import BasePaginationFilter
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 
@@ -76,7 +76,7 @@ class HistoryOut(BaseModel):
     action: HistoryActionEnum
     payload: HistoryDiff
     user_id: UUID | None = None
-    user: AuthorOut | None = None
+    user: UserShortOut | None = None
     parent_id: UUID
     parent_type: str
     request_id: UUID | None = None

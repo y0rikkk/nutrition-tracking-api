@@ -24,8 +24,6 @@ class UserCreate(BaseModel):
     is_service_user: bool = False
     email: str | None = None
     access_token_expires_at: datetime | None = None
-    ad_login: str | None = None
-    master_id: int | None = None
     full_name: str | None = None
 
 
@@ -40,8 +38,6 @@ class UserUpdate(BaseModel):
     is_superuser: bool | None = None
     is_service_user: bool | None = None
     email: str | None = None
-    ad_login: str | None = None
-    master_id: int | None = None
     full_name: str | None = None
 
 
@@ -57,8 +53,6 @@ class UserOut(BaseModel):
     is_superuser: bool
     is_service_user: bool
     email: str | None
-    ad_login: str | None
-    master_id: int | None
     full_name: str | None
     roles: list[RoleOut]
     role_ids: list[UUID]
@@ -73,8 +67,6 @@ class UserOutMulti(BaseModel):
 
     id: UUID
     username: str
-    ad_login: str | None
-    master_id: int | None
     full_name: str | None
     email: str | None = None
     roles: list[RoleOut]
@@ -90,9 +82,7 @@ class UserRoutePermissions(BaseModel):
     access_token_expires_at: datetime | None
     is_service_user: bool
     is_superuser: bool
-    ad_login: str | None
     full_name: str | None
-    master_id: int | None
 
     permissions: dict[str, dict[str, Any]] | None = None
 
@@ -105,9 +95,7 @@ class UserFilters(BasePaginationFilter):
 
     username__ilike: str | None = None
     email__ilike: str | None = None
-    ad_login__ilike: str | None = None
     is_superuser: bool | None = None
     is_service_user: bool | None = None
-    master_id: int | None = None
     role_id: UUID | None = None
     role_name__ilike: str | None = None

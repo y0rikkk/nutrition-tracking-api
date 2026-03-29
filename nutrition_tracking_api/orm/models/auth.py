@@ -87,8 +87,6 @@ class User(Base):
     access_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_superuser: Mapped[bool]
     is_service_user: Mapped[bool]
-    ad_login: Mapped[str | None]
-    master_id: Mapped[int | None]
     full_name: Mapped[str | None]
 
     roles: Mapped[list["Role"]] = relationship("Role", secondary="user_roles", viewonly=True)

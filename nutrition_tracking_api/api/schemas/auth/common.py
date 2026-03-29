@@ -46,20 +46,8 @@ class PermissionRules(BaseModel):
     options: list[str] | None = None
 
 
-class AuthorOut(BaseModel):
-    """Минимальное представление пользователя для записей истории."""
-
-    id: UUID
-    username: str
-    ad_login: str | None = None
-    full_name: str | None = None
-    master_id: int | None = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class UserShortOut(BaseModel):
-    """Минимальное представление пользователя для creator, modifier, archiver."""
+    """Минимальное представление пользователя для creator, modifier, archiver и записей истории."""
 
     id: UUID
     full_name: str | None = None
