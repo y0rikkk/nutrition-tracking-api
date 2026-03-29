@@ -17,6 +17,7 @@ from nutrition_tracking_api.api.middlewares import LoggingMiddleware, RequestIDM
 from nutrition_tracking_api.api.routes.auth import auth_router
 from nutrition_tracking_api.api.routes.auth.token import router as public_auth_router
 from nutrition_tracking_api.api.routes.core import core_router
+from nutrition_tracking_api.api.routes.nutrition import nutrition_router
 from nutrition_tracking_api.api.routes.root.routes import router as root_router
 from nutrition_tracking_api.logger import init_logger
 from nutrition_tracking_api.settings import settings
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     )  # Публичные endpoints: /auth/register/, /auth/login/, /auth/token/refresh/, /auth/logout/
     app.include_router(auth_router, dependencies=dependencies)
     app.include_router(core_router, dependencies=dependencies)
+    app.include_router(nutrition_router, dependencies=dependencies)
 
     app.add_middleware(
         CORSMiddleware,

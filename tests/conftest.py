@@ -19,8 +19,10 @@ from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.api.services.auth.users import UserService
 from nutrition_tracking_api.dependencies import get_session_generator
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
+from nutrition_tracking_api.orm.models.nutrition import FoodItem
 from nutrition_tracking_api.settings import settings
 from tests.factories.auth import PolicyFactory, RoleFactory, UserFactory
+from tests.factories.nutrition.food_item import FoodItemFactory
 
 # Сервисный токен для тестового клиента
 TEST_SERVICE_USER_TOKEN = "test_service_token"
@@ -165,6 +167,12 @@ def role() -> Role:
 def policy() -> Policy:
     """Политика в БД (targets: /auth/users/, actions: GET/POST/PATCH/DELETE)."""
     return PolicyFactory()  # type: ignore[return-value]
+
+
+@pytest.fixture
+def food_item() -> FoodItem:
+    """FoodItem в БД."""
+    return FoodItemFactory()  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------

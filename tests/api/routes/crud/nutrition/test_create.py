@@ -1,0 +1,62 @@
+"""Тесты создания FoodItem."""
+
+from http import HTTPStatus
+
+import pytest
+from fastapi.testclient import TestClient
+from pydantic import BaseModel
+from pytest_lazy_fixtures import lf as lazy_fixture
+
+from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
+from nutrition_tracking_api.orm.models import Base, User
+from nutrition_tracking_api.orm.models.nutrition import FoodItem
+
+
+@pytest.mark.parametrize(
+    ("path", "model_data"),
+    [
+        ("/foods/", lazy_fixture("food_item_payload")),
+    ],
+)
+def test_create_simple(client: TestClient, path: str, model_data: BaseModel) -> None:
+    result = client.post(path, content=model_data.model_dump_json())
+    assert result.status_code == HTTPStatus.CREATED, result.json()
+    assert result.json()["id"]
+
+
+@pytest.mark.parametrize(
+    ("path", "model_data"),
+    [
+        ("/foods/", lazy_fixture("food_item_payload")),
+    ],
+)
+def test_create_history(client: TestClient, path: str, model_data: BaseModel) -> None:
+    result = client.post(path, content=model_data.model_dump_json())
+
+    history_records = client.get("/core/history/").json()["items"]
+    assert len(history_records) == 1
+    assert history_records[0]["action"] == HistoryActionEnum.CREATE
+    assert history_records[0]["object_id"] == result.json()["id"]
+
+
+@pytest.mark.parametrize(
+    ("path", "model_data", "model_class"),
+    [
+        ("/foods/", lazy_fixture("food_item_payload"), FoodItem),
+    ],
+)
+def test_create_add_actions_author(
+    client: TestClient, path: str, model_data: BaseModel, model_class: Base, superuser: User
+) -> None:
+    result = client.post(
+        path,
+        content=model_data.model_dump_json(),
+        headers={"Authorization": f"Bearer {superuser.access_token}"},
+    )
+    assert result.status_code == HTTPStatus.CREATED
+    if model_class.add_actions_author:
+        assert result.json()["creator"]["id"] == str(superuser.id)
+        assert result.json()["modifier"]["id"] == str(superuser.id)
+    else:
+        assert result.json().get("creator") is None
+        assert result.json().get("modifier") is None

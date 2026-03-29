@@ -9,7 +9,7 @@ from alembic import context
 
 from nutrition_tracking_api.settings import settings
 from nutrition_tracking_api.orm.models.base import Base
-from nutrition_tracking_api.orm.models import auth, core  # noqa: F401
+from nutrition_tracking_api.orm.models import auth, core, nutrition  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
