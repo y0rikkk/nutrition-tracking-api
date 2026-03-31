@@ -19,10 +19,12 @@ from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.api.services.auth.users import UserService
 from nutrition_tracking_api.dependencies import get_session_generator
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
-from nutrition_tracking_api.orm.models.nutrition import FoodItem
+from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem
 from nutrition_tracking_api.settings import settings
 from tests.factories.auth import PolicyFactory, RoleFactory, UserFactory
 from tests.factories.nutrition.food_item import FoodItemFactory
+from tests.factories.nutrition.meal_entry import MealEntryFactory
+from tests.factories.nutrition.meal_food_item import MealFoodItemFactory
 
 # Сервисный токен для тестового клиента
 TEST_SERVICE_USER_TOKEN = "test_service_token"
@@ -175,6 +177,18 @@ def food_item() -> FoodItem:
     return FoodItemFactory()  # type: ignore[return-value]
 
 
+@pytest.fixture
+def meal_entry() -> MealEntry:
+    """MealEntry в БД (со своим пользователем)."""
+    return MealEntryFactory()  # type: ignore[return-value]
+
+
+@pytest.fixture
+def meal_food_item(meal_entry: MealEntry) -> MealFoodItem:
+    """MealFoodItem в БД, привязанный к meal_entry."""
+    return MealFoodItemFactory(meal_entry=meal_entry)  # type: ignore[return-value]
+
+
 # ---------------------------------------------------------------------------
 # Составные auth-фикстуры
 # ---------------------------------------------------------------------------
@@ -258,3 +272,57 @@ def make_user_with_permissions(
         return test_user_service.add_roles(user_id=u.id, role_ids=[r.id])
 
     return _factory
+
+
+@pytest.fixture
+def nutrition_user(
+    test_user_service: UserService,
+    test_role_service: RoleService,
+) -> User:
+    """Пользователь со всеми nutrition политиками из миграции.
+
+    Имеет доступ ко всем nutrition endpoint'ам с матчерами по user_id.
+    Используется в тестах, где требуется JWT Bearer аутентификация.
+    """
+    u: User = UserFactory()  # type: ignore[assignment]
+    r: Role = RoleFactory()  # type: ignore[assignment]
+
+    user_matcher = [{"field": "user_id", "condition": "eq", "value": "$user.id"}]
+    meal_item_matcher = [{"field": "meal_entry.user_id", "condition": "eq", "value": "$user.id"}]
+
+    for p in [
+        PolicyFactory(
+            targets=["/meals/", "/meals/{object_id}", "/meals/{object_id}/items/"],
+            actions=["GET", "POST", "PATCH", "DELETE"],
+            matchers=user_matcher,
+        ),
+        PolicyFactory(
+            targets=["/meal-items/", "/meal-items/{object_id}"],
+            actions=["GET", "POST", "PATCH", "DELETE"],
+            matchers=meal_item_matcher,
+        ),
+        PolicyFactory(
+            targets=["/foods/", "/foods/{object_id}"],
+            actions=["GET", "POST", "PATCH", "DELETE"],
+            matchers=None,
+        ),
+        PolicyFactory(
+            targets=["/goals/", "/goals/{object_id}"],
+            actions=["GET", "POST", "PATCH", "DELETE"],
+            matchers=user_matcher,
+        ),
+        PolicyFactory(
+            targets=["/weight-logs/", "/weight-logs/{object_id}"],
+            actions=["GET", "POST", "PATCH", "DELETE"],
+            matchers=user_matcher,
+        ),
+    ]:
+        test_role_service.add_policy(role_id=r.id, policy_id=p.id)  # type: ignore[arg-type]
+
+    # Сбросить кэш сессии: policies (viewonly=True) не инвалидируется при
+    # изменениях через _role_policies (AssociationProxy), поэтому expire_all()
+    # гарантирует свежую загрузку role.policies из БД при следующем доступе.
+    test_role_service.resource_crud.session.expire_all()
+
+    test_user_service.add_roles(user_id=u.id, role_ids=[r.id])
+    return u

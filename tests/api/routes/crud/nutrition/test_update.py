@@ -1,4 +1,4 @@
-"""Тесты обновления FoodItem."""
+"""Тесты обновления объектов nutrition домена."""
 
 from http import HTTPStatus
 
@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from pytest_lazy_fixtures import lf as lazy_fixture
 
 from nutrition_tracking_api.api.schemas.nutrition.food_item import FoodItemUpdate
+from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealEntryUpdate
+from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFoodItemUpdate
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models import Base
 from nutrition_tracking_api.orm.models.auth import User
@@ -20,6 +22,16 @@ from nutrition_tracking_api.orm.models.auth import User
             "/foods/",
             lazy_fixture("food_item"),
             FoodItemUpdate(name="updated_food"),
+        ),
+        (
+            "/meals/",
+            lazy_fixture("meal_entry"),
+            MealEntryUpdate(notes="updated notes"),
+        ),
+        (
+            "/meal-items/",
+            lazy_fixture("meal_food_item"),
+            MealFoodItemUpdate(calories_kcal=200.0),
         ),
     ],
 )
@@ -43,6 +55,16 @@ def test_update_success(
             "/foods/",
             lazy_fixture("food_item"),
             FoodItemUpdate(name="updated_food"),
+        ),
+        (
+            "/meals/",
+            lazy_fixture("meal_entry"),
+            MealEntryUpdate(notes="updated notes"),
+        ),
+        (
+            "/meal-items/",
+            lazy_fixture("meal_food_item"),
+            MealFoodItemUpdate(calories_kcal=200.0),
         ),
     ],
 )

@@ -1,4 +1,4 @@
-"""Тесты удаления FoodItem."""
+"""Тесты удаления объектов nutrition домена."""
 
 from http import HTTPStatus
 
@@ -14,6 +14,8 @@ from nutrition_tracking_api.orm.models import Base
     ("path", "model_object"),
     [
         ("/foods/", lazy_fixture("food_item")),
+        ("/meals/", lazy_fixture("meal_entry")),
+        ("/meal-items/", lazy_fixture("meal_food_item")),
     ],
 )
 def test_delete(client: TestClient, path: str, model_object: Base) -> None:

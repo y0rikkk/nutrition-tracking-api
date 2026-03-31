@@ -1,4 +1,4 @@
-"""Тесты получения FoodItem."""
+"""Тесты получения объектов nutrition домена."""
 
 from http import HTTPStatus
 
@@ -13,6 +13,8 @@ from nutrition_tracking_api.orm.models import Base
     ("path", "model_object"),
     [
         ("/foods/", lazy_fixture("food_item")),
+        ("/meals/", lazy_fixture("meal_entry")),
+        ("/meal-items/", lazy_fixture("meal_food_item")),
     ],
 )
 def test_get(client: TestClient, path: str, model_object: Base) -> None:
@@ -31,6 +33,8 @@ def test_get(client: TestClient, path: str, model_object: Base) -> None:
     ("path", "model_object"),
     [
         ("/foods/", lazy_fixture("food_item")),
+        ("/meals/", lazy_fixture("meal_entry")),
+        ("/meal-items/", lazy_fixture("meal_food_item")),
     ],
 )
 def test_get_multi(client: TestClient, path: str, model_object: Base) -> None:
@@ -49,7 +53,7 @@ def test_get_multi(client: TestClient, path: str, model_object: Base) -> None:
 
 @pytest.mark.parametrize(
     "path",
-    ["/foods/"],
+    ["/foods/", "/meals/", "/meal-items/"],
 )
 def test_get_multi_empty(client: TestClient, path: str) -> None:
     resp = client.get(path)
