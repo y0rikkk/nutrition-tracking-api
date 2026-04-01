@@ -11,6 +11,7 @@ from nutrition_tracking_api.api.schemas.nutrition.food_item import FoodItemUpdat
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealEntryUpdate
 from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFoodItemUpdate
 from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import NutritionGoalUpdate
+from nutrition_tracking_api.api.schemas.nutrition.weight_log import WeightLogUpdate
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models import Base
 from nutrition_tracking_api.orm.models.auth import User
@@ -38,6 +39,11 @@ from nutrition_tracking_api.orm.models.auth import User
             "/goals/",
             lazy_fixture("nutrition_goal"),
             NutritionGoalUpdate(notes="updated notes"),
+        ),
+        (
+            "/weight-logs/",
+            lazy_fixture("weight_log"),
+            WeightLogUpdate(notes="updated notes"),
         ),
     ],
 )
@@ -76,6 +82,11 @@ def test_update_success(
             "/goals/",
             lazy_fixture("nutrition_goal"),
             NutritionGoalUpdate(notes="updated notes"),
+        ),
+        (
+            "/weight-logs/",
+            lazy_fixture("weight_log"),
+            WeightLogUpdate(notes="updated notes"),
         ),
     ],
 )

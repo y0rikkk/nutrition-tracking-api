@@ -4,6 +4,7 @@ from tests.factories.nutrition.food_item import FoodItemFactory, FoodItemPayload
 from tests.factories.nutrition.meal_entry import MealEntryFactory, MealEntryPayloadFactory
 from tests.factories.nutrition.meal_food_item import MealFoodItemFactory, MealFoodItemPayloadFactory
 from tests.factories.nutrition.nutrition_goal import NutritionGoalFactory, NutritionGoalPayloadFactory
+from tests.factories.nutrition.weight_log import WeightLogFactory, WeightLogPayloadFactory
 
 __all__ = [
     "FoodItemFactory",
@@ -14,4 +15,6 @@ __all__ = [
     "MealFoodItemPayloadFactory",
     "NutritionGoalFactory",
     "NutritionGoalPayloadFactory",
+    "WeightLogFactory",
+    "WeightLogPayloadFactory",
 ]

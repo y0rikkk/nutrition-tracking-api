@@ -61,6 +61,19 @@ class MealFoodItem(Base):
     food_item: Mapped[Optional["FoodItem"]] = relationship("FoodItem")
 
 
+class WeightLog(Base):
+    """Запись веса пользователя."""
+
+    add_actions_author = False
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
+    date: Mapped[date]
+    weight_kg: Mapped[float]
+    notes: Mapped[str | None]
+
+    user: Mapped["User"] = relationship("User")
+
+
 class NutritionGoal(Base):
     """Цель пользователя по КБЖУ."""
 

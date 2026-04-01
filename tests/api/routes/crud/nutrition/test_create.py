@@ -9,7 +9,7 @@ from pytest_lazy_fixtures import lf as lazy_fixture
 
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models import Base, User
-from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem, NutritionGoal
+from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem, NutritionGoal, WeightLog
 
 
 @pytest.mark.parametrize(
@@ -19,6 +19,7 @@ from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, Mea
         ("/meal-items/", lazy_fixture("meal_food_item_payload")),
         ("/meals/", lazy_fixture("meal_entry_payload")),
         ("/goals/", lazy_fixture("nutrition_goal_payload")),
+        ("/weight-logs/", lazy_fixture("weight_log_payload")),
     ],
 )
 def test_create_simple(client: TestClient, path: str, model_data: BaseModel) -> None:
@@ -49,6 +50,7 @@ def test_create_history(client: TestClient, path: str, model_data: BaseModel) ->
         ("/meal-items/", lazy_fixture("meal_food_item_payload"), MealFoodItem),
         ("/meals/", lazy_fixture("meal_entry_payload"), MealEntry),
         ("/goals/", lazy_fixture("nutrition_goal_payload"), NutritionGoal),
+        ("/weight-logs/", lazy_fixture("weight_log_payload"), WeightLog),
     ],
 )
 def test_create_add_actions_author(

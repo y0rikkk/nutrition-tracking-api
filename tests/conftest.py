@@ -19,13 +19,14 @@ from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.api.services.auth.users import UserService
 from nutrition_tracking_api.dependencies import get_session_generator
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
-from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem, NutritionGoal
+from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem, NutritionGoal, WeightLog
 from nutrition_tracking_api.settings import settings
 from tests.factories.auth import PolicyFactory, RoleFactory, UserFactory
 from tests.factories.nutrition.food_item import FoodItemFactory
 from tests.factories.nutrition.meal_entry import MealEntryFactory
 from tests.factories.nutrition.meal_food_item import MealFoodItemFactory
 from tests.factories.nutrition.nutrition_goal import NutritionGoalFactory
+from tests.factories.nutrition.weight_log import WeightLogFactory
 
 # Сервисный токен для тестового клиента
 TEST_SERVICE_USER_TOKEN = "test_service_token"
@@ -194,6 +195,12 @@ def meal_food_item(meal_entry: MealEntry) -> MealFoodItem:
 def nutrition_goal(nutrition_user: User) -> NutritionGoal:
     """NutritionGoal в БД (is_active=True), привязанный к nutrition_user."""
     return NutritionGoalFactory(user=nutrition_user)  # type: ignore[return-value]
+
+
+@pytest.fixture
+def weight_log(nutrition_user: User) -> WeightLog:
+    """WeightLog в БД, привязанный к nutrition_user."""
+    return WeightLogFactory(user=nutrition_user)  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------
