@@ -10,6 +10,7 @@ from pytest_lazy_fixtures import lf as lazy_fixture
 from nutrition_tracking_api.api.schemas.nutrition.food_item import FoodItemUpdate
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealEntryUpdate
 from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFoodItemUpdate
+from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import NutritionGoalUpdate
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models import Base
 from nutrition_tracking_api.orm.models.auth import User
@@ -32,6 +33,11 @@ from nutrition_tracking_api.orm.models.auth import User
             "/meal-items/",
             lazy_fixture("meal_food_item"),
             MealFoodItemUpdate(calories_kcal=200.0),
+        ),
+        (
+            "/goals/",
+            lazy_fixture("nutrition_goal"),
+            NutritionGoalUpdate(notes="updated notes"),
         ),
     ],
 )
@@ -65,6 +71,11 @@ def test_update_success(
             "/meal-items/",
             lazy_fixture("meal_food_item"),
             MealFoodItemUpdate(calories_kcal=200.0),
+        ),
+        (
+            "/goals/",
+            lazy_fixture("nutrition_goal"),
+            NutritionGoalUpdate(notes="updated notes"),
         ),
     ],
 )

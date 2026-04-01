@@ -42,7 +42,7 @@ def test_create_meal_entry_with_foreign_user_id_forbidden(client: TestClient, nu
     запись не находится (user_id чужого пользователя) → AccessDeniedError → 403.
     """
     payload = {
-        "date": str(datetime.datetime.now().date()),  # noqa: DTZ005
+        "date": str(datetime.datetime.now().date()),
         "meal_type": "lunch",
         "source": "manual",
         "user_id": str(user.id),
@@ -58,7 +58,7 @@ def test_create_meal_entry_with_foreign_user_id_forbidden(client: TestClient, nu
 def test_superuser_can_create_meal_entry_for_other_user(client: TestClient, superuser: User, user: User) -> None:
     """Суперюзер может создать meal_entry с произвольным user_id."""
     payload = {
-        "date": str(datetime.datetime.now().date()),  # noqa: DTZ005
+        "date": str(datetime.datetime.now().date()),
         "meal_type": "lunch",
         "source": "manual",
         "user_id": str(user.id),

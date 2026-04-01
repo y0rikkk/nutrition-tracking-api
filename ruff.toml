@@ -29,6 +29,7 @@ ignore = [
     "COM812",
     "FBT001",  # bool as arg
     "FIX002",  # TODO
+    "DTZ005",
 ]
 exclude = []
 

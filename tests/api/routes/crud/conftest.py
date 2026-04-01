@@ -8,12 +8,14 @@ from nutrition_tracking_api.api.schemas.auth.user import UserCreate
 from nutrition_tracking_api.api.schemas.nutrition.food_item import FoodItemCreate
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealEntryCreate
 from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFoodItemCreate
+from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import NutritionGoalCreate
 from tests.factories.auth.policy import PolicyPayloadFactory
 from tests.factories.auth.role import RolePayloadFactory
 from tests.factories.auth.user import UserPayloadFactory
 from tests.factories.nutrition.food_item import FoodItemPayloadFactory
 from tests.factories.nutrition.meal_entry import MealEntryPayloadFactory
 from tests.factories.nutrition.meal_food_item import MealFoodItemPayloadFactory
+from tests.factories.nutrition.nutrition_goal import NutritionGoalPayloadFactory
 
 
 @pytest.fixture
@@ -50,3 +52,9 @@ def meal_entry_payload() -> MealEntryCreate:
 def meal_food_item_payload() -> MealFoodItemCreate:
     """Payload fixture для создания MealFoodItem (ручной ввод)."""
     return MealFoodItemPayloadFactory()  # type: ignore[return-value]
+
+
+@pytest.fixture
+def nutrition_goal_payload() -> NutritionGoalCreate:
+    """Payload fixture для создания NutritionGoal."""
+    return NutritionGoalPayloadFactory()  # type: ignore[return-value]

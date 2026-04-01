@@ -15,6 +15,7 @@ from nutrition_tracking_api.orm.models import Base
         ("/foods/", lazy_fixture("food_item")),
         ("/meals/", lazy_fixture("meal_entry")),
         ("/meal-items/", lazy_fixture("meal_food_item")),
+        ("/goals/", lazy_fixture("nutrition_goal")),
     ],
 )
 def test_get(client: TestClient, path: str, model_object: Base) -> None:
@@ -35,6 +36,7 @@ def test_get(client: TestClient, path: str, model_object: Base) -> None:
         ("/foods/", lazy_fixture("food_item")),
         ("/meals/", lazy_fixture("meal_entry")),
         ("/meal-items/", lazy_fixture("meal_food_item")),
+        ("/goals/", lazy_fixture("nutrition_goal")),
     ],
 )
 def test_get_multi(client: TestClient, path: str, model_object: Base) -> None:
@@ -53,7 +55,7 @@ def test_get_multi(client: TestClient, path: str, model_object: Base) -> None:
 
 @pytest.mark.parametrize(
     "path",
-    ["/foods/", "/meals/", "/meal-items/"],
+    ["/foods/", "/meals/", "/meal-items/", "/goals/"],
 )
 def test_get_multi_empty(client: TestClient, path: str) -> None:
     resp = client.get(path)

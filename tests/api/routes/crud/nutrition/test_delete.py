@@ -16,6 +16,7 @@ from nutrition_tracking_api.orm.models import Base
         ("/foods/", lazy_fixture("food_item")),
         ("/meals/", lazy_fixture("meal_entry")),
         ("/meal-items/", lazy_fixture("meal_food_item")),
+        ("/goals/", lazy_fixture("nutrition_goal")),
     ],
 )
 def test_delete(client: TestClient, path: str, model_object: Base) -> None:

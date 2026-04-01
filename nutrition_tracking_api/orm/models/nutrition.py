@@ -59,3 +59,21 @@ class MealFoodItem(Base):
 
     meal_entry: Mapped["MealEntry"] = relationship("MealEntry", back_populates="items")
     food_item: Mapped[Optional["FoodItem"]] = relationship("FoodItem")
+
+
+class NutritionGoal(Base):
+    """Цель пользователя по КБЖУ."""
+
+    add_actions_author = False
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
+    calories_kcal: Mapped[float]
+    protein_g: Mapped[float]
+    fat_g: Mapped[float]
+    carbs_g: Mapped[float]
+    is_active: Mapped[bool] = mapped_column(default=True)
+    started_at: Mapped[date]
+    ended_at: Mapped[date | None] = mapped_column(nullable=True)
+    notes: Mapped[str | None]
+
+    user: Mapped["User"] = relationship("User")
