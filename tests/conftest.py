@@ -310,8 +310,13 @@ def nutrition_user(
         ),
         PolicyFactory(
             targets=["/foods/", "/foods/{object_id}"],
-            actions=["GET", "POST", "PATCH", "DELETE"],
+            actions=["GET", "POST"],
             matchers=None,
+        ),
+        PolicyFactory(
+            targets=["/foods/", "/foods/{object_id}"],
+            actions=["PATCH", "DELETE"],
+            matchers=[{"field": "creator_id", "condition": "eq", "value": "$user.id"}],
         ),
         PolicyFactory(
             targets=["/goals/", "/goals/{object_id}"],
