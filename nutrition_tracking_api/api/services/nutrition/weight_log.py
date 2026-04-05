@@ -29,6 +29,17 @@ class WeightLogService(
     resource_crud_class = WeightLogCRUD
     filter_model = WeightLogFilter
 
+    def get_latest(self) -> WeightLogOut | None:
+        """Вернуть последнюю запись веса пользователя (по дате, затем по времени создания)."""
+        results = self.resource_crud.get_multi(
+            {"user_id": self.user_id},
+            with_for_update=False,
+        )
+        if not results:
+            return None
+        latest = sorted(results, key=lambda w: (w.date, w.created_at), reverse=True)[0]
+        return self.out_model.model_validate(latest)
+
     def _handle_pre_create(self, create_data: WeightLogCreate) -> None:
         """Инжекция user_id из токена, если не передан явно."""
         if create_data.user_id is None:

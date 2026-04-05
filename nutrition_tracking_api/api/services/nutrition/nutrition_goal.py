@@ -38,6 +38,17 @@ class NutritionGoalService(
     resource_crud_class = NutritionGoalCRUD
     filter_model = NutritionGoalFilter
 
+    def get_active_goal(self) -> NutritionGoalOut | None:
+        """Вернуть активную цель текущего пользователя (None если нет)."""
+        try:
+            goal = self.resource_crud.get_one_by_filter(
+                {"user_id": self.user_id, "is_active": True},
+                with_for_update=False,
+            )
+            return self.out_model.model_validate(goal)
+        except NoResultFound:
+            return None
+
     def _deactivate_current_goal(self) -> None:
         """Деактивировать текущую активную цель пользователя (если есть)."""
         try:

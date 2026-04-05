@@ -337,6 +337,11 @@ def nutrition_user(
             actions=["GET", "PATCH"],
             matchers=None,
         ),
+        PolicyFactory(
+            targets=["/dashboard/"],
+            actions=["GET"],
+            matchers=None,
+        ),
     ]:
         test_role_service.add_policy(role_id=r.id, policy_id=p.id)  # type: ignore[arg-type]
 

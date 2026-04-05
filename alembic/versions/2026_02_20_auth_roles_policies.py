@@ -183,6 +183,17 @@ def upgrade() -> None:
             "created_at": now,
             "updated_at": now,
         },
+        {
+            "id": uuid.uuid4(),
+            "name": "nutrition-dashboard-access",
+            "description": "Доступ к дашборду питания (только свои данные)",
+            "targets": ["/dashboard/"],
+            "actions": ["GET"],
+            "matchers": None,
+            "options": None,
+            "created_at": now,
+            "updated_at": now,
+        },
     ]
 
     op.bulk_insert(policy_table, policies)
