@@ -1,7 +1,5 @@
 """User service."""
 
-from collections import defaultdict
-from typing import Any
 from uuid import UUID
 
 import loguru
@@ -12,15 +10,15 @@ from nutrition_tracking_api.api.crud.auth.role import RoleCRUD
 from nutrition_tracking_api.api.crud.auth.user import UserCRUD
 from nutrition_tracking_api.api.exceptions import ObjectNotFoundError, WrongCredentialsError
 from nutrition_tracking_api.api.schemas.auth.common import PermissionRules
+from nutrition_tracking_api.api.schemas.auth.token import RegisterRequest
 from nutrition_tracking_api.api.schemas.auth.user import (
     UserCreate,
     UserFilters,
     UserOut,
     UserOutMulti,
-    UserRoutePermissions,
+    UserProfileUpdate,
     UserUpdate,
 )
-from nutrition_tracking_api.api.services.auth.permissions import get_matcher_value
 from nutrition_tracking_api.api.services.base import BaseCRUDService
 from nutrition_tracking_api.api.utils.auth import create_token, hash_password, verify_password
 from nutrition_tracking_api.api.utils.utils import dump_model
@@ -167,6 +165,11 @@ class UserService(
         )
         return self.out_model.model_validate(user)
 
+    def _handle_post_create(self, resource: User, create_data: UserCreate) -> None:  # type: ignore[override]
+        """Назначить дефолтную роль всем новым пользователям."""
+        self.add_default_role(resource.id)
+        super()._handle_post_create(resource, create_data)
+
     def _handle_pre_create(self, create_data: UserCreate) -> None:
         """
         Для service users — генерировать токен, не устанавливать expires_at.
@@ -213,53 +216,27 @@ class UserService(
 
         return user
 
-    def create_with_password(
-        self, username: str, password: str, email: str | None = None, full_name: str | None = None
-    ) -> User:
-        """
-        Создать нового пользователя с паролем (публичная регистрация).
-
-        Args:
-        ----
-            username: Имя пользователя
-            password: Пароль в открытом виде (будет захеширован)
-            email: Email (опционально)
-            full_name: Полное имя (опционально)
-
-        Returns:
-        -------
-            ORM объект нового пользователя
-
-        """
-        db_user = self.resource_crud.create(
-            {
-                "username": username,
-                "password_hash": hash_password(password),
-                "email": email,
-                "full_name": full_name,
-                "is_superuser": False,
-                "is_service_user": False,
-            }
+    def create_with_password(self, data: RegisterRequest) -> UserOut:
+        """Создать нового пользователя с паролем (публичная регистрация)."""
+        create_data = UserCreate(
+            username=data.username,
+            password=data.password,
+            email=data.email,
+            full_name=data.full_name,
+            birth_date=data.birth_date,
+            gender=data.gender,
+            height_cm=data.height_cm,
+            weight_kg=data.weight_kg,
+            activity_level=data.activity_level,
+            is_superuser=False,
+            is_service_user=False,
         )
-        self.add_default_role(db_user.id)
-        return self.resource_crud.get(db_user.id, with_for_update=False)
+        return self.create(create_data)
 
-    def get_user_routes_permissions(self, user: User) -> UserRoutePermissions:
-        results: dict[str, dict[str, list[Any]]] = defaultdict(dict)
-        for role in user.roles:
-            for policy in role.policies:
-                result_matchers = {}
-                if policy.matchers:
-                    for matcher in policy.matchers:
-                        result_matchers[matcher["field"]] = {
-                            "value": get_matcher_value(matcher, user),
-                            "condition": matcher["condition"],
-                        }
-                for target in policy.targets:
-                    for action in policy.actions:
-                        results[target].setdefault(action, []).append(
-                            {"matchers": result_matchers, "options": policy.options}
-                        )
-        user_model = UserRoutePermissions.model_validate(user)
-        user_model.permissions = results
-        return user_model
+    def get_me(self, user: User) -> UserOut:
+        """Получить текущего пользователя."""
+        return self.out_model.model_validate(user)
+
+    def update_profile(self, user_id: UUID, profile_data: UserProfileUpdate) -> UserOut:
+        """Обновить профиль текущего пользователя."""
+        return self.update(user_id, profile_data)  # type: ignore[arg-type]

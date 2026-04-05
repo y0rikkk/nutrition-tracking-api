@@ -172,6 +172,17 @@ def upgrade() -> None:
             "created_at": now,
             "updated_at": now,
         },
+        {
+            "id": uuid.uuid4(),
+            "name": "user-profile-access",
+            "description": "Доступ к профилю текущего пользователя",
+            "targets": ["/auth/users/me/"],
+            "actions": ["GET", "PATCH"],
+            "matchers": None,
+            "options": None,
+            "created_at": now,
+            "updated_at": now,
+        },
     ]
 
     op.bulk_insert(policy_table, policies)

@@ -335,6 +335,11 @@ def nutrition_user(
             actions=["GET", "POST", "PATCH", "DELETE"],
             matchers=user_matcher,
         ),
+        PolicyFactory(
+            targets=["/auth/users/me/"],
+            actions=["GET", "PATCH"],
+            matchers=None,
+        ),
     ]:
         test_role_service.add_policy(role_id=r.id, policy_id=p.id)  # type: ignore[arg-type]
 

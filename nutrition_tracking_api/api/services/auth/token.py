@@ -9,6 +9,7 @@ from nutrition_tracking_api.api.crud.auth.token import RefreshTokenCRUD
 from nutrition_tracking_api.api.crud.auth.user import UserCRUD
 from nutrition_tracking_api.api.exceptions import AuthTokenExpiredError, AuthTokenValidateError
 from nutrition_tracking_api.api.schemas.auth.token import LoginRequest, RegisterRequest, TokenResponse
+from nutrition_tracking_api.api.schemas.auth.user import UserOut
 from nutrition_tracking_api.api.services.auth.users import UserService
 from nutrition_tracking_api.api.utils.auth import create_access_token, create_refresh_token, decode_token
 from nutrition_tracking_api.orm.models.auth import User
@@ -25,12 +26,7 @@ class TokenService:
 
     def register(self, data: RegisterRequest) -> TokenResponse:
         """Зарегистрировать нового пользователя и выдать пару токенов."""
-        user = UserService(self.session).create_with_password(
-            username=data.username,
-            password=data.password,
-            email=data.email,
-            full_name=data.full_name,
-        )
+        user = UserService(self.session).create_with_password(data)
         return self.issue_tokens(user)
 
     def login(self, data: LoginRequest) -> TokenResponse:
@@ -38,7 +34,7 @@ class TokenService:
         user = UserService(self.session).authenticate(data.username, data.password)
         return self.issue_tokens(user)
 
-    def issue_tokens(self, user: User) -> TokenResponse:
+    def issue_tokens(self, user: User | UserOut) -> TokenResponse:
         """
         Выдать пару токенов (access + refresh) для пользователя.
 

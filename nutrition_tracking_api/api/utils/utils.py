@@ -1,6 +1,6 @@
 """Вспомогательные утилиты для API."""
 
-from datetime import datetime
+from datetime import date
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -15,7 +15,7 @@ def dump_model_field(value: Any) -> Any:
     """Конвертировать значение поля в JSON-сериализуемый тип."""
     if isinstance(value, UUID):
         return str(value)
-    if isinstance(value, datetime):
+    if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, Enum):
         return value.value

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from nutrition_tracking_api.api.schemas.auth.user import UserOut, UserRoutePermissions
+from nutrition_tracking_api.api.schemas.auth.user import UserOut, UserProfileUpdate
 from nutrition_tracking_api.api.services.auth.users import UserService
 from nutrition_tracking_api.api.utils.routes import init_crud_routes
 from nutrition_tracking_api.dependencies import (
@@ -56,13 +56,29 @@ def remove_user_role(  # noqa: PLR0913
 
 @router.get(
     "/me/",
-    summary="Текущий пользователь и его права",
+    summary="Текущий пользователь",
     status_code=200,
-    response_model=UserRoutePermissions,
+    response_model=UserOut,
 )
 def get_me(
     session: SessionDependency,
     user: UserDependency,
     request_state: RequestStateDependency,
 ) -> Any:
-    return UserService(session, user=user, request_state=request_state).get_user_routes_permissions(user)  # type: ignore[arg-type]
+    return UserService(session, user=user, request_state=request_state).get_me(user)  # type: ignore[arg-type]
+
+
+@router.patch(
+    "/me/",
+    summary="Обновить профиль текущего пользователя",
+    status_code=200,
+    response_model=UserOut,
+)
+def update_my_profile(
+    profile_data: UserProfileUpdate,
+    session: SessionDependency,
+    rules: RulesDependency,
+    user: UserDependency,
+    request_state: RequestStateDependency,
+) -> Any:
+    return UserService(session, rules, user, request_state).update_profile(user.id, profile_data)  # type: ignore[union-attr]

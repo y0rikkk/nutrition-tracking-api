@@ -1,6 +1,10 @@
 """Схемы для аутентификации (login, register, token response)."""
 
+import datetime
+
 from pydantic import BaseModel, Field
+
+from nutrition_tracking_api.api.schemas.auth.user import ActivityLevelEnum, GenderEnum
 
 
 class LoginRequest(BaseModel):
@@ -17,6 +21,11 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8)
     email: str | None = None
     full_name: str | None = None
+    birth_date: datetime.date
+    gender: GenderEnum
+    height_cm: float = Field(gt=0, le=300)
+    weight_kg: float = Field(gt=0, le=700)
+    activity_level: ActivityLevelEnum
 
 
 class TokenResponse(BaseModel):

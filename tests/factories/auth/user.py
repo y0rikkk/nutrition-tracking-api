@@ -1,8 +1,11 @@
 """User factory."""
 
+import datetime
+
 import factory
 
 from nutrition_tracking_api.api.schemas.auth import UserCreate
+from nutrition_tracking_api.api.schemas.auth.user import ActivityLevelEnum, GenderEnum
 from nutrition_tracking_api.api.utils.auth import create_access_token, hash_password
 from nutrition_tracking_api.orm.models.auth import User
 from tests.factories.base import BaseMeta, BaseSQLAlchemyModelFactory
@@ -19,6 +22,11 @@ class UserPayloadFactory(factory.Factory):
     is_superuser = False
     is_service_user = False
     email = factory.Faker("email")
+    birth_date = datetime.date(1990, 1, 1)
+    gender = GenderEnum.male
+    height_cm = 175.0
+    weight_kg = 70.0
+    activity_level = ActivityLevelEnum.moderately_active
 
 
 class UserFactory(UserPayloadFactory, BaseSQLAlchemyModelFactory):

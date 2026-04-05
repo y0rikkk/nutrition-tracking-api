@@ -1,14 +1,45 @@
 """User Pydantic schemas."""
 
+import datetime as dt
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Any
+from enum import StrEnum
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from nutrition_tracking_api.api.schemas.auth.roles import RoleOut
 from nutrition_tracking_api.api.schemas.filters import BasePaginationFilter
+
+
+class GenderEnum(StrEnum):
+    """Пол пользователя."""
+
+    male = "male"
+    female = "female"
+
+
+class ActivityLevelEnum(StrEnum):
+    """Уровень физической активности."""
+
+    sedentary = "sedentary"
+    lightly_active = "lightly_active"
+    moderately_active = "moderately_active"
+    very_active = "very_active"
+    extra_active = "extra_active"
+
+
+class UserProfileUpdate(BaseModel):
+    """Схема для обновления профиля текущего пользователя."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    birth_date: dt.date | None = None
+    gender: GenderEnum | None = None
+    height_cm: float | None = Field(None, gt=0, le=300)
+    weight_kg: float | None = Field(None, gt=0, le=700)
+    activity_level: ActivityLevelEnum | None = None
 
 
 class UserCreate(BaseModel):
@@ -25,12 +56,15 @@ class UserCreate(BaseModel):
     email: str | None = None
     access_token_expires_at: datetime | None = None
     full_name: str | None = None
+    birth_date: dt.date
+    gender: GenderEnum
+    height_cm: float = Field(gt=0, le=300)
+    weight_kg: float = Field(gt=0, le=700)
+    activity_level: ActivityLevelEnum
 
 
-class UserUpdate(BaseModel):
-    """Schema for updating a user."""
-
-    model_config = ConfigDict(extra="forbid")
+class UserUpdate(UserProfileUpdate):
+    """Schema for updating a user (admin)."""
 
     username: str | None = None
     access_token: str | None = None
@@ -54,6 +88,11 @@ class UserOut(BaseModel):
     is_service_user: bool
     email: str | None
     full_name: str | None
+    birth_date: dt.date | None
+    gender: GenderEnum | None
+    height_cm: float | None
+    weight_kg: float | None
+    activity_level: ActivityLevelEnum | None
     roles: list[RoleOut]
     role_ids: list[UUID]
     created_at: datetime
@@ -73,20 +112,6 @@ class UserOutMulti(BaseModel):
     role_ids: list[UUID]
     created_at: datetime
     updated_at: datetime
-
-
-class UserRoutePermissions(BaseModel):
-    id: UUID
-    username: str
-    access_token: str | None
-    access_token_expires_at: datetime | None
-    is_service_user: bool
-    is_superuser: bool
-    full_name: str | None
-
-    permissions: dict[str, dict[str, Any]] | None = None
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass

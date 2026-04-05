@@ -154,79 +154,104 @@ def test_user_ok_matcher_rule(client: TestClient, make_user_with_permissions: An
     assert data["items"][0]["id"] == str(user_a.id)
 
 
-def test_get_me(
+def test_get_me(client: TestClient, nutrition_user: User) -> None:
+    """GET /auth/users/me/ возвращает текущего пользователя с профилем."""
+    resp = client.get(
+        "/auth/users/me/",
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+    )
+
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    assert data["id"] == str(nutrition_user.id)
+    assert data["username"] == nutrition_user.username
+    assert "birth_date" in data
+    assert "height_cm" in data
+    assert "weight_kg" in data
+
+
+def test_rbac_or_between_policies(
     client: TestClient,
     make_user_with_permissions: Any,
     test_role_service: RoleService,
 ) -> None:
-    """GET /auth/users/me/ проверяет OR между политиками и AND внутри политики.
+    """OR между политиками: если хотя бы одна политика разрешает — доступ открыт.
 
-    Политика 1 (один matcher) и Политика 2 (два matcher) применены к одной роли
-    для одного target+action. Ожидаем два entry в списке (OR), второй содержит
-    оба matcher-а в одном словаре (AND).
+    User A имеет Политику 1 (matcher id=$user.id) — видит только себя.
+    Добавляем Политику 2 без матчеров на ту же роль.
+    OR: Политика 2 разрешает всё → User A теперь видит всех пользователей.
     """
-    # Политика 1: один matcher по id
-    user_out: UserOut = make_user_with_permissions(
-        targets=["/auth/users/"],
+    UserFactory()  # посторонний пользователь в БД
+
+    user_a: UserOut = make_user_with_permissions(
+        targets=["/auth/users/", "/auth/users/{object_id}"],
         actions=["GET"],
         matchers=[{"field": "id", "condition": "eq", "value": "$user.id"}],
-        options=["Approve"],
     )
 
-    # Политика 2: два matcher — AND внутри одной политики
-    and_policy: Policy = PolicyFactory(  # type: ignore[assignment]
-        targets=["/auth/users/"],
+    # С одной политикой — видит только себя
+    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json()["count"] == 1
+
+    # Добавляем вторую политику без матчеров (OR)
+    open_policy: Policy = PolicyFactory(  # type: ignore[assignment]
+        targets=["/auth/users/", "/auth/users/{object_id}"],
+        actions=["GET"],
+        matchers=None,
+    )
+    test_role_service.add_policy(role_id=user_a.roles[0].id, policy_id=open_policy.id)
+    test_role_service.resource_crud.session.expire_all()
+
+    # После OR с открытой политикой — видит всех (себя + постороннего)
+    resp2 = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
+    assert resp2.status_code == HTTPStatus.OK
+    assert resp2.json()["count"] == 2
+
+
+def test_rbac_and_within_policy(
+    client: TestClient,
+    make_user_with_permissions: Any,
+) -> None:
+    """AND внутри политики: запись должна удовлетворять всем матчерам одновременно.
+
+    Политика с двумя матчерами (id=$user.id AND username=$user.username)
+    разрешает только записи, где оба условия выполнены — то есть только сам пользователь.
+    """
+    UserFactory()  # посторонний пользователь в БД
+
+    user_a: UserOut = make_user_with_permissions(
+        targets=["/auth/users/", "/auth/users/{object_id}"],
         actions=["GET"],
         matchers=[
             {"field": "id", "condition": "eq", "value": "$user.id"},
             {"field": "username", "condition": "eq", "value": "$user.username"},
         ],
     )
-    test_role_service.add_policy(
-        role_id=user_out.roles[0].id,
-        policy_id=and_policy.id,
-    )
 
-    resp = client.get(
-        "/auth/users/me/",
-        headers={"Authorization": f"Bearer {user_out.access_token}"},
-    )
-
+    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
     assert resp.status_code == HTTPStatus.OK
-    data = resp.json()
-    assert data["id"] == str(user_out.id)
-    # OR: два отдельных entry — один на каждую политику
-    assert sorted(data["permissions"]) == sorted(
-        {
-            "/auth/users/": {
-                "GET": [
-                    # Политика 1 — один matcher
-                    {
-                        "matchers": {"id": {"value": str(user_out.id), "condition": "eq"}},
-                        "options": ["Approve"],
-                    },
-                    # Политика 2 — два matcher одновременно (AND)
-                    {
-                        "matchers": {
-                            "id": {"value": str(user_out.id), "condition": "eq"},
-                            "username": {"value": user_out.username, "condition": "eq"},
-                        },
-                        "options": None,
-                    },
-                ],
-            },
-        }
-    )
+    # Оба матчера указывают на User A → видит только себя, несмотря на два условия
+    assert resp.json()["count"] == 1
+    assert resp.json()["items"][0]["id"] == str(user_a.id)
 
 
 # ---------------------------------------------------------------------------
 # Тесты register / login / refresh / logout
 # ---------------------------------------------------------------------------
 
+_PROFILE = {
+    "birth_date": "1995-03-20",
+    "gender": "male",
+    "height_cm": 175.0,
+    "weight_kg": 70.0,
+    "activity_level": "moderately_active",
+}
+
 
 def test_register(client: TestClient) -> None:
     """Публичная регистрация создаёт пользователя и возвращает пару токенов."""
-    payload = {"username": "newuser", "password": "securepass123"}
+    payload = {"username": "newuser", "password": "securepass123", **_PROFILE}
     resp = client.post("/auth/register/", json=payload)
 
     assert resp.status_code == HTTPStatus.CREATED
@@ -240,7 +265,7 @@ def test_register(client: TestClient) -> None:
 def test_register_duplicate_username(client: TestClient) -> None:
     """Повторная регистрация с тем же именем → 400."""
     UserFactory(username="existinguser")
-    payload = {"username": "existinguser", "password": "securepass123"}
+    payload = {"username": "existinguser", "password": "securepass123", **_PROFILE}
     resp = client.post("/auth/register/", json=payload)
 
     assert resp.status_code == HTTPStatus.BAD_REQUEST
@@ -281,7 +306,7 @@ def test_login_nonexistent_user(client: TestClient) -> None:
 def test_refresh_token(client: TestClient) -> None:
     """Refresh токен обменивается на новую пару токенов (token rotation)."""
     # Регистрируемся чтобы получить refresh token
-    resp = client.post("/auth/register/", json={"username": "refreshuser", "password": "pass12345"})
+    resp = client.post("/auth/register/", json={"username": "refreshuser", "password": "pass12345", **_PROFILE})
     assert resp.status_code == HTTPStatus.CREATED
     refresh_token = resp.json()["refresh_token"]
 
@@ -300,7 +325,7 @@ def test_refresh_token(client: TestClient) -> None:
 
 def test_refresh_token_used_twice(client: TestClient) -> None:
     """Использованный refresh токен нельзя использовать повторно → 401."""
-    resp = client.post("/auth/register/", json={"username": "rotation_user", "password": "pass12345"})
+    resp = client.post("/auth/register/", json={"username": "rotation_user", "password": "pass12345", **_PROFILE})
     refresh_token = resp.json()["refresh_token"]
 
     # Первое использование — успех
@@ -314,7 +339,7 @@ def test_refresh_token_used_twice(client: TestClient) -> None:
 
 def test_logout(client: TestClient) -> None:
     """Logout отзывает refresh токен — дальнейший refresh невозможен."""
-    resp = client.post("/auth/register/", json={"username": "logoutuser", "password": "pass12345"})
+    resp = client.post("/auth/register/", json={"username": "logoutuser", "password": "pass12345", **_PROFILE})
     refresh_token = resp.json()["refresh_token"]
 
     # Logout
@@ -329,7 +354,7 @@ def test_logout(client: TestClient) -> None:
 def test_access_token_valid_after_register(client: TestClient) -> None:
     """Access token полученный при регистрации работает для защищённых endpoints."""
     RoleFactory(is_default=True)
-    resp = client.post("/auth/register/", json={"username": "apiuser", "password": "pass12345"})
+    resp = client.post("/auth/register/", json={"username": "apiuser", "password": "pass12345", **_PROFILE})
     access_token = resp.json()["access_token"]
 
     # /auth/users/me/ доступен без дополнительных прав
@@ -474,6 +499,50 @@ def test_role_policies_history(client: TestClient, role: Role, policy: Policy) -
     assert remove_record["parent_type"] == "Role"
     # policy_ids: [policy.id] → []
     assert remove_record["payload"]["diff_obj"] == {"policy_ids": []}
+
+
+def test_update_profile_success(client: TestClient, nutrition_user: User) -> None:
+    """Пользователь может обновить все поля профиля."""
+    payload = {
+        "birth_date": "1990-05-15",
+        "gender": "male",
+        "height_cm": 180.0,
+        "weight_kg": 75.0,
+        "activity_level": "moderately_active",
+    }
+    resp = client.patch(
+        "/auth/users/me/",
+        json=payload,
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+    )
+    assert resp.status_code == HTTPStatus.OK, resp.json()
+    assert resp.json()["height_cm"] == 180.0
+    assert resp.json()["weight_kg"] == 75.0
+    assert resp.json()["gender"] == "male"
+    assert resp.json()["birth_date"] == "1990-05-15"
+    assert resp.json()["activity_level"] == "moderately_active"
+
+
+def test_update_profile_partial(client: TestClient, nutrition_user: User) -> None:
+    """Частичное обновление профиля — незаполненные поля остаются None."""
+    resp = client.patch(
+        "/auth/users/me/",
+        json={"weight_kg": 80.0},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+    )
+    assert resp.status_code == HTTPStatus.OK, resp.json()
+    assert resp.json()["weight_kg"] == 80.0
+    assert resp.json()["height_cm"] == 175.0  # не трогали — осталось из UserFactory
+
+
+def test_update_profile_invalid_height(client: TestClient, nutrition_user: User) -> None:
+    """Невалидное значение height_cm возвращает 422."""
+    resp = client.patch(
+        "/auth/users/me/",
+        json={"height_cm": -1.0},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+    )
+    assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 def test_create_role(client: TestClient) -> None:

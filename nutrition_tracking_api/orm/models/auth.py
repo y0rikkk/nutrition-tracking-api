@@ -1,5 +1,6 @@
 """Auth ORM models."""
 
+import datetime as dt
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -9,7 +10,9 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.associationproxy import AssociationProxy, association_proxy
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from nutrition_tracking_api.api.schemas.auth.user import ActivityLevelEnum, GenderEnum
 from nutrition_tracking_api.orm.models.base import Base
+from nutrition_tracking_api.orm.models.utils import make_enum_column_type
 
 
 class UserRoles(Base):
@@ -88,6 +91,15 @@ class User(Base):
     is_superuser: Mapped[bool]
     is_service_user: Mapped[bool]
     full_name: Mapped[str | None]
+
+    # Профильные поля
+    birth_date: Mapped[dt.date | None] = mapped_column(nullable=True)
+    gender: Mapped[GenderEnum | None] = mapped_column(make_enum_column_type(GenderEnum), nullable=True)
+    height_cm: Mapped[float | None] = mapped_column(nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(nullable=True)
+    activity_level: Mapped[ActivityLevelEnum | None] = mapped_column(
+        make_enum_column_type(ActivityLevelEnum), nullable=True
+    )
 
     roles: Mapped[list["Role"]] = relationship("Role", secondary="user_roles", viewonly=True)
 
