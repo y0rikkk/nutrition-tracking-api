@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from nutrition_tracking_api.api.schemas.filters import BasePaginationFilter
 from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFoodItemOut
@@ -47,7 +47,11 @@ class MealEntryUpdate(BaseModel):
 
 
 class MealEntryOut(BaseModel):
-    """Схема для вывода приёма пищи (список)."""
+    """Схема для вывода приёма пищи (список).
+
+    items загружаются через subqueryload в MealEntryCRUD, но скрыты из вывода.
+    computed_field-поля считают суммы КБЖУ по items.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -60,6 +64,28 @@ class MealEntryOut(BaseModel):
     photo_url: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
+
+    items: list[MealFoodItemOut] = Field(default=[], exclude=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def calories_kcal(self) -> float:
+        return round(sum(i.calories_kcal for i in self.items), 2)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def protein_g(self) -> float:
+        return round(sum(i.protein_g for i in self.items), 2)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def fat_g(self) -> float:
+        return round(sum(i.fat_g for i in self.items), 2)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def carbs_g(self) -> float:
+        return round(sum(i.carbs_g for i in self.items), 2)
 
 
 class MealEntryDetailOut(MealEntryOut):
