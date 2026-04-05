@@ -24,7 +24,8 @@ jobs:
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-          ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
           JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
           EOF
 

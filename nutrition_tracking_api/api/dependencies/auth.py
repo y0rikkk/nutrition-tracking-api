@@ -2,8 +2,8 @@
 
 from fastapi import Depends, Request
 from fastapi.exceptions import HTTPException
-from fastapi.openapi.models import APIKey, APIKeyIn, SecuritySchemeType
 from fastapi.openapi.models import SecurityBase as OpenApiSecurityBase
+from fastapi.openapi.models import SecuritySchemeType
 from fastapi.security.base import SecurityBase
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.status import HTTP_401_UNAUTHORIZED
@@ -30,19 +30,7 @@ class AuthToken(SecurityBase):
         return None
 
 
-class ServiceToken(SecurityBase):
-    """Service-to-service токен из заголовка XXX-Token-Authorization."""
-
-    def __init__(self, *, scheme_name: str | None = None) -> None:
-        self.scheme_name = scheme_name or self.__class__.__name__
-        self.model = APIKey(**{"in": APIKeyIn.header, "name": "XXX-Token-Authorization"})
-
-    def __call__(self, request: Request) -> str | None:
-        return request.headers.get("XXX-Token-Authorization")
-
-
 auth_token_obtain = AuthToken()
-service_token_obtain = ServiceToken()
 
 
 def auth_service_dependency(db_session: SessionDependency) -> AuthService:
@@ -67,19 +55,15 @@ def auth_service_dependency(db_session: SessionDependency) -> AuthService:
 def validate_token(
     request: Request,
     auth_token: str | None = Depends(auth_token_obtain),
-    service_token: str | None = Depends(service_token_obtain),
     auth_service: AuthService = Depends(auth_service_dependency),
 ) -> bool:
     """
     Главная dependency для аутентификации.
 
-    Проверяет токены в порядке приоритета: Bearer → Service token.
-
     Args:
     ----
         request: FastAPI Request
         auth_token: Bearer JWT токен (или None)
-        service_token: Service токен (или None)
         auth_service: AuthService instance
 
     Returns:
@@ -92,8 +76,6 @@ def validate_token(
 
     """
     if auth_token and auth_service.verify_permissions(request, auth_token):
-        return True
-    if service_token and auth_service.verify_service_token(request, service_token):
         return True
 
     raise HTTPException(

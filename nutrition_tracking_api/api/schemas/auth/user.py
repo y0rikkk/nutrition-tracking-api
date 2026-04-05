@@ -50,11 +50,8 @@ class UserCreate(BaseModel):
         str | None, Field(exclude=True)
     ] = None  # plain-text, хешируется в _handle_pre_create; в model_dump не попадает
     password_hash: str | None = None  # хеш пароля, записывается в БД
-    access_token: str | None = None
     is_superuser: bool = False
-    is_service_user: bool = False
     email: str | None = None
-    access_token_expires_at: datetime | None = None
     full_name: str | None = None
     birth_date: dt.date
     gender: GenderEnum
@@ -67,10 +64,7 @@ class UserUpdate(UserProfileUpdate):
     """Schema for updating a user (admin)."""
 
     username: str | None = None
-    access_token: str | None = None
-    access_token_expires_at: datetime | None = None
     is_superuser: bool | None = None
-    is_service_user: bool | None = None
     email: str | None = None
     full_name: str | None = None
 
@@ -82,10 +76,7 @@ class UserOut(BaseModel):
 
     id: UUID
     username: str
-    access_token: str | None
-    access_token_expires_at: datetime | None
     is_superuser: bool
-    is_service_user: bool
     email: str | None
     full_name: str | None
     birth_date: dt.date | None
@@ -121,6 +112,5 @@ class UserFilters(BasePaginationFilter):
     username__ilike: str | None = None
     email__ilike: str | None = None
     is_superuser: bool | None = None
-    is_service_user: bool | None = None
     role_id: UUID | None = None
     role_name__ilike: str | None = None

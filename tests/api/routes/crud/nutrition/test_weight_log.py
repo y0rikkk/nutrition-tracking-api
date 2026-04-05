@@ -18,6 +18,6 @@ def test_create_weight_log_with_foreign_user_id_forbidden(client: TestClient, nu
     result = client.post(
         "/weight-logs/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.FORBIDDEN

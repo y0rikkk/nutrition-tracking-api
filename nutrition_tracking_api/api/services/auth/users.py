@@ -20,7 +20,7 @@ from nutrition_tracking_api.api.schemas.auth.user import (
     UserUpdate,
 )
 from nutrition_tracking_api.api.services.base import BaseCRUDService
-from nutrition_tracking_api.api.utils.auth import create_token, hash_password, verify_password
+from nutrition_tracking_api.api.utils.auth import hash_password, verify_password
 from nutrition_tracking_api.api.utils.utils import dump_model
 from nutrition_tracking_api.app_schemas import RequestState
 from nutrition_tracking_api.orm.models.auth import User
@@ -56,25 +56,6 @@ class UserService(
     ) -> None:
         self.role_crud = RoleCRUD(session, rules)
         super().__init__(session, rules, user, request_state)
-
-    def get_by_token(self, token: str) -> User:
-        """
-        Найти пользователя по access_token.
-
-        Args:
-        ----
-            token: Access token
-
-        Returns:
-        -------
-            ORM объект пользователя
-
-        Raises:
-        ------
-            NoResultFound: Если пользователь не найден
-
-        """
-        return self.resource_crud.get_one_by_filter({"access_token": token}, with_for_update=False)
 
     def get_by_username(self, username: str) -> User:
         """
@@ -172,8 +153,7 @@ class UserService(
 
     def _handle_pre_create(self, create_data: UserCreate) -> None:
         """
-        Для service users — генерировать токен, не устанавливать expires_at.
-        Для обычных users — хешировать пароль если передан.
+        Хешировать пароль если передан.
 
         Args:
         ----
@@ -181,9 +161,6 @@ class UserService(
 
         """
         super()._handle_pre_create(create_data)
-        if create_data.is_service_user:
-            create_data.access_token = create_token(create_data.username)
-            create_data.access_token_expires_at = None
         if create_data.password:
             create_data.password_hash = hash_password(create_data.password)
             create_data.password = None  # не хранить пароль в открытом виде

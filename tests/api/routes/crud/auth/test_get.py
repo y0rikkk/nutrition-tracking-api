@@ -41,7 +41,6 @@ def test_get(client: TestClient, path: str, model_object: Base) -> None:
 @pytest.mark.parametrize(
     ("path", "model_object"),
     [
-        ("/auth/users/", lazy_fixture("user")),
         ("/auth/roles/", lazy_fixture("role")),
         ("/auth/policies/", lazy_fixture("policy")),
     ],
@@ -61,16 +60,34 @@ def test_get_multi(client: TestClient, path: str, model_object: Base) -> None:
         assert "modifier" not in items[0]
 
 
+def test_get_multi_users(client: TestClient, user: "User") -> None:
+    """/auth/users/ всегда содержит минимум сессионного суперпользователя из client-фикстуры."""
+    resp = client.get("/auth/users/", params={"is_superuser": "false"})
+    items = resp.json()["items"]
+
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json()["count"] == len(items) == 1
+    assert items[0]["id"] == str(user.id)
+
+
 @pytest.mark.parametrize(
     "path",
     [
-        "/auth/users/",
         "/auth/roles/",
         "/auth/policies/",
     ],
 )
 def test_get_multi_empty(client: TestClient, path: str) -> None:
     resp = client.get(path)
+
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json()["items"] == []
+    assert resp.json()["count"] == 0
+
+
+def test_get_multi_empty_users(client: TestClient) -> None:
+    """/auth/users/ без обычных пользователей содержит только сессионного суперпользователя."""
+    resp = client.get("/auth/users/", params={"is_superuser": "false"})
 
     assert resp.status_code == HTTPStatus.OK
     assert resp.json()["items"] == []
@@ -87,7 +104,8 @@ def test_get_users_by_filters(
     role: Role = RoleFactory(name="admin_role")  # type: ignore[assignment]
     test_user_service.add_roles(user_id=user_1.id, role_ids=[role.id])
 
-    resp_all = client.get("/auth/users/").json()
+    # Фильтруем по is_superuser=False чтобы исключить сессионного суперпользователя клиента
+    resp_all = client.get("/auth/users/", params={"is_superuser": "false"}).json()
     assert resp_all["count"] == 2
 
     resp_email = client.get("/auth/users/", params={"email__ilike": "alice"}).json()

@@ -90,38 +90,3 @@ class AuthService:
         return self.permission_service.validate_path_permissions(
             user=user, path=request.url.path, method=request.method, request=request
         )
-
-    def verify_service_token(self, request: Request, service_token: str) -> bool:
-        """
-        Верифицировать service-to-service токен.
-
-        Args:
-        ----
-            request: FastAPI Request
-            service_token: Сервисный токен из заголовка XXX-Token-Authorization
-
-        Returns:
-        -------
-            True если доступ разрешен
-
-        Raises:
-        ------
-            AuthTokenValidateError: Если токен невалиден или нет прав
-
-        """
-        try:
-            service_user = self.users_service.get_by_token(service_token)
-            if service_user.is_superuser or (
-                service_user.is_service_user
-                and self.permission_service.validate_path_permissions(
-                    user=service_user,
-                    path=request.url.path,
-                    method=request.method,
-                    request=request,
-                )
-            ):
-                self._set_request_state(request, service_user)
-                return True
-        except NoResultFound as e:
-            raise AuthTokenValidateError from e
-        raise AuthTokenValidateError

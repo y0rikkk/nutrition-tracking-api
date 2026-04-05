@@ -8,7 +8,6 @@ from typing import Any
 import jwt
 from fastapi.testclient import TestClient
 
-from nutrition_tracking_api.api.schemas.auth.user import UserOut
 from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.orm.choices.history import HistoryActionEnum
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
@@ -55,7 +54,7 @@ def test_auth_existing_user(client: TestClient, user: User) -> None:
     """Пользователь существует в БД. Токен валиден (не истёк)."""
     resp = client.get(
         "/auth/users/me/",
-        headers={"Authorization": f"Bearer {user.access_token}"},
+        headers={"Authorization": f"Bearer {user.access_token}"},  # type: ignore[attr-defined]
     )
 
     assert resp.status_code == HTTPStatus.OK
@@ -87,22 +86,22 @@ def test_invalid_signature_token(client: TestClient, user: User) -> None:
     assert resp.status_code == HTTPStatus.UNAUTHORIZED
 
 
-def test_user_bad_permissions(client: TestClient, user_with_permissions: UserOut) -> None:
+def test_user_bad_permissions(client: TestClient, user_with_permissions: User) -> None:
     """Пользователь с правами на /auth/users/ пытается GET /auth/roles/ → 403."""
     resp = client.get(
         "/auth/roles/",
-        headers={"Authorization": f"Bearer {user_with_permissions.access_token}"},
+        headers={"Authorization": f"Bearer {user_with_permissions.access_token}"},  # type: ignore[attr-defined]
     )
 
     assert resp.status_code == HTTPStatus.FORBIDDEN
     assert resp.json() == {"detail": "Вам нужно больше прав для выполнения этого действия"}
 
 
-def test_user_ok_permissions(client: TestClient, user_with_permissions: UserOut) -> None:
+def test_user_ok_permissions(client: TestClient, user_with_permissions: User) -> None:
     """Пользователь с правами на /auth/users/ успешно обращается к /auth/users/."""
     resp = client.get(
         "/auth/users/",
-        headers={"Authorization": f"Bearer {user_with_permissions.access_token}"},
+        headers={"Authorization": f"Bearer {user_with_permissions.access_token}"},  # type: ignore[attr-defined]
     )
 
     assert resp.status_code == HTTPStatus.OK
@@ -113,7 +112,7 @@ def test_superuser_access(client: TestClient, superuser: User) -> None:
     """Суперпользователь не требует политик — доступ везде."""
     resp = client.get(
         "/auth/roles/",
-        headers={"Authorization": f"Bearer {superuser.access_token}"},
+        headers={"Authorization": f"Bearer {superuser.access_token}"},  # type: ignore[attr-defined]
     )
 
     assert resp.status_code == HTTPStatus.OK
@@ -158,7 +157,7 @@ def test_get_me(client: TestClient, nutrition_user: User) -> None:
     """GET /auth/users/me/ возвращает текущего пользователя с профилем."""
     resp = client.get(
         "/auth/users/me/",
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
 
     assert resp.status_code == HTTPStatus.OK
@@ -183,14 +182,14 @@ def test_rbac_or_between_policies(
     """
     UserFactory()  # посторонний пользователь в БД
 
-    user_a: UserOut = make_user_with_permissions(
+    user_a: User = make_user_with_permissions(
         targets=["/auth/users/", "/auth/users/{object_id}"],
         actions=["GET"],
         matchers=[{"field": "id", "condition": "eq", "value": "$user.id"}],
     )
 
     # С одной политикой — видит только себя
-    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
+    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})  # type: ignore[attr-defined]
     assert resp.status_code == HTTPStatus.OK
     assert resp.json()["count"] == 1
 
@@ -203,8 +202,13 @@ def test_rbac_or_between_policies(
     test_role_service.add_policy(role_id=user_a.roles[0].id, policy_id=open_policy.id)
     test_role_service.resource_crud.session.expire_all()
 
-    # После OR с открытой политикой — видит всех (себя + постороннего)
-    resp2 = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
+    # После OR с открытой политикой — видит всех обычных пользователей (себя + постороннего)
+    # Фильтруем is_superuser=False чтобы исключить сессионного суперпользователя из client-фикстуры
+    resp2 = client.get(
+        "/auth/users/",
+        params={"is_superuser": "false"},
+        headers={"Authorization": f"Bearer {user_a.access_token}"},  # type: ignore[attr-defined]
+    )
     assert resp2.status_code == HTTPStatus.OK
     assert resp2.json()["count"] == 2
 
@@ -220,7 +224,7 @@ def test_rbac_and_within_policy(
     """
     UserFactory()  # посторонний пользователь в БД
 
-    user_a: UserOut = make_user_with_permissions(
+    user_a: User = make_user_with_permissions(
         targets=["/auth/users/", "/auth/users/{object_id}"],
         actions=["GET"],
         matchers=[
@@ -229,7 +233,7 @@ def test_rbac_and_within_policy(
         ],
     )
 
-    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})
+    resp = client.get("/auth/users/", headers={"Authorization": f"Bearer {user_a.access_token}"})  # type: ignore[attr-defined]
     assert resp.status_code == HTTPStatus.OK
     # Оба матчера указывают на User A → видит только себя, несмотря на два условия
     assert resp.json()["count"] == 1
@@ -513,7 +517,7 @@ def test_update_profile_success(client: TestClient, nutrition_user: User) -> Non
     resp = client.patch(
         "/auth/users/me/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.OK, resp.json()
     assert resp.json()["height_cm"] == 180.0
@@ -528,7 +532,7 @@ def test_update_profile_partial(client: TestClient, nutrition_user: User) -> Non
     resp = client.patch(
         "/auth/users/me/",
         json={"weight_kg": 80.0},
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.OK, resp.json()
     assert resp.json()["weight_kg"] == 80.0
@@ -540,7 +544,7 @@ def test_update_profile_invalid_height(client: TestClient, nutrition_user: User)
     resp = client.patch(
         "/auth/users/me/",
         json={"height_cm": -1.0},
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 

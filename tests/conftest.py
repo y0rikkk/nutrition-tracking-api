@@ -2,10 +2,10 @@
 
 from collections.abc import Generator
 from typing import Any
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
-from pytest_mock import MockerFixture
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -13,10 +13,10 @@ from alembic.command import upgrade
 from alembic.config import Config
 from nutrition_tracking_api.api.main import app
 from nutrition_tracking_api.api.schemas.auth.roles import RoleOut
-from nutrition_tracking_api.api.schemas.auth.user import UserOut
 from nutrition_tracking_api.api.services.auth.policy import PolicyService
 from nutrition_tracking_api.api.services.auth.role import RoleService
 from nutrition_tracking_api.api.services.auth.users import UserService
+from nutrition_tracking_api.api.utils.auth import create_access_token
 from nutrition_tracking_api.dependencies import get_session_generator
 from nutrition_tracking_api.orm.models.auth import Policy, Role, User
 from nutrition_tracking_api.orm.models.nutrition import FoodItem, MealEntry, MealFoodItem, NutritionGoal, WeightLog
@@ -28,8 +28,10 @@ from tests.factories.nutrition.meal_food_item import MealFoodItemFactory
 from tests.factories.nutrition.nutrition_goal import NutritionGoalFactory
 from tests.factories.nutrition.weight_log import WeightLogFactory
 
-# Сервисный токен для тестового клиента
-TEST_SERVICE_USER_TOKEN = "test_service_token"
+# Фиксированный суперпользователь для тест-клиента.
+# Пересоздаётся в truncate_tables с тем же UUID, поэтому JWT остаётся валидным между тестами.
+_SESSION_SUPERUSER_ID = UUID("00000000-0000-0000-0000-000000000001")
+_SESSION_SUPERUSER_TOKEN = create_access_token(str(_SESSION_SUPERUSER_ID), "test_admin")
 
 
 @pytest.fixture(scope="session")
@@ -84,6 +86,10 @@ def truncate_tables(db_session: Session) -> Any:
     table_names = ", ".join(f"public.{table}" for table in tables)
     db_session.execute(text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE"))
 
+    # Пересоздаём суперпользователя с фиксированным UUID после каждой очистки,
+    # чтобы JWT токен клиента оставался валидным на протяжении всей сессии.
+    UserFactory(id=_SESSION_SUPERUSER_ID, username="test_admin", is_superuser=True)
+
 
 @pytest.fixture(scope="session")
 def alembic_config() -> Config:
@@ -98,25 +104,12 @@ def client() -> Generator[TestClient, None, None]:
     """
     Create FastAPI test client.
 
-    Передаёт сервисный токен — validate_token выполняется по реальному флоу,
-    только verify_service_token мокается в _mock_service_auth.
+    Использует суперпользователя с фиксированным UUID и JWT.
+    После каждого truncate_tables суперпользователь пересоздаётся с тем же UUID,
+    поэтому JWT остаётся валидным на протяжении всей сессии.
     """
-    with TestClient(app, headers={"XXX-Token-Authorization": TEST_SERVICE_USER_TOKEN}) as test_client:
+    with TestClient(app, headers={"Authorization": f"Bearer {_SESSION_SUPERUSER_TOKEN}"}) as test_client:
         yield test_client
-
-
-@pytest.fixture(autouse=True)
-def _mock_service_auth(mocker: MockerFixture) -> None:
-    """
-    Autouse-фикстура: мокает verify_service_token для всех тестов.
-
-    validate_token проходит реальный флоу (проверка публичных путей,
-    извлечение токенов), но финальная верификация токена в БД обходится.
-    """
-    mocker.patch(
-        "nutrition_tracking_api.api.services.auth.authorization.AuthService.verify_service_token",
-        return_value=True,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +216,7 @@ def user_with_permissions(
     user: User,
     role_with_policy: RoleOut,
     test_user_service: UserService,
-) -> UserOut:
+) -> User:
     """
     Пользователь с ролью и политикой (targets: /auth/users/).
 
@@ -233,7 +226,9 @@ def user_with_permissions(
             headers={"Authorization": f"Bearer {user_with_permissions.access_token}"},
         )
     """
-    return test_user_service.add_roles(user_id=user.id, role_ids=[role_with_policy.id])
+    test_user_service.add_roles(user_id=user.id, role_ids=[role_with_policy.id])
+    test_user_service.resource_crud.session.expire_all()
+    return user
 
 
 @pytest.fixture
@@ -271,7 +266,7 @@ def make_user_with_permissions(
         actions: list[str] | None = None,
         matchers: list[Any] | None = None,
         options: list[str] | None = None,
-    ) -> UserOut:
+    ) -> User:
         from tests.factories.auth import PolicyFactory, RoleFactory
 
         u: User = UserFactory()  # type: ignore[assignment]
@@ -283,7 +278,9 @@ def make_user_with_permissions(
         )
         r: Role = RoleFactory()  # type: ignore[assignment]
         test_role_service.add_policy(role_id=r.id, policy_id=p.id)
-        return test_user_service.add_roles(user_id=u.id, role_ids=[r.id])
+        test_user_service.add_roles(user_id=u.id, role_ids=[r.id])
+        test_user_service.resource_crud.session.expire_all()
+        return u
 
     return _factory
 

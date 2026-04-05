@@ -1,11 +1,10 @@
 """Auth ORM models."""
 
 import datetime as dt
-from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.associationproxy import AssociationProxy, association_proxy
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -86,20 +85,15 @@ class User(Base):
     email: Mapped[str | None]
     username: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[str | None] = mapped_column(nullable=True)
-    access_token: Mapped[str | None] = mapped_column(unique=True, nullable=True)
-    access_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_superuser: Mapped[bool]
-    is_service_user: Mapped[bool]
     full_name: Mapped[str | None]
 
     # Профильные поля
-    birth_date: Mapped[dt.date | None] = mapped_column(nullable=True)
-    gender: Mapped[GenderEnum | None] = mapped_column(make_enum_column_type(GenderEnum), nullable=True)
-    height_cm: Mapped[float | None] = mapped_column(nullable=True)
-    weight_kg: Mapped[float | None] = mapped_column(nullable=True)
-    activity_level: Mapped[ActivityLevelEnum | None] = mapped_column(
-        make_enum_column_type(ActivityLevelEnum), nullable=True
-    )
+    birth_date: Mapped[dt.date]
+    gender: Mapped[GenderEnum] = mapped_column(make_enum_column_type(GenderEnum))
+    height_cm: Mapped[float]
+    weight_kg: Mapped[float]
+    activity_level: Mapped[ActivityLevelEnum] = mapped_column(make_enum_column_type(ActivityLevelEnum))
 
     roles: Mapped[list["Role"]] = relationship("Role", secondary="user_roles", viewonly=True)
 

@@ -16,7 +16,7 @@ def test_create_meal_entry_simple(
     result = client.post(
         "/meals/",
         content=meal_entry_payload.model_dump_json(),
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     assert result.json()["id"]
@@ -50,7 +50,7 @@ def test_create_meal_entry_with_foreign_user_id_forbidden(client: TestClient, nu
     result = client.post(
         "/meals/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.FORBIDDEN
 
@@ -66,7 +66,7 @@ def test_superuser_can_create_meal_entry_for_other_user(client: TestClient, supe
     result = client.post(
         "/meals/",
         json=payload,
-        headers={"Authorization": f"Bearer {superuser.access_token}"},
+        headers={"Authorization": f"Bearer {superuser.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     assert result.json()["user_id"] == str(user.id)

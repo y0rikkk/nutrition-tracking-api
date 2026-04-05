@@ -59,7 +59,7 @@ def test_create_add_actions_author(
     result = client.post(
         path,
         content=model_data.model_dump_json(),
-        headers={"Authorization": f"Bearer {superuser.access_token}"},
+        headers={"Authorization": f"Bearer {superuser.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED
     if model_class.add_actions_author:

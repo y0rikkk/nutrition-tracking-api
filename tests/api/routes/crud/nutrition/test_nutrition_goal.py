@@ -25,7 +25,7 @@ def test_create_auto_deactivates_previous_goal(client: TestClient, nutrition_use
     result = client.post(
         "/goals/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     new_goal_id = result.json()["id"]
@@ -60,7 +60,7 @@ def test_update_reactivate_forbidden(client: TestClient, nutrition_user: User) -
     resp = client.patch(
         f"/goals/{goal.id}",
         json={"is_active": True},
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -78,7 +78,7 @@ def test_create_goal_with_foreign_user_id_forbidden(client: TestClient, nutritio
     result = client.post(
         "/goals/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.FORBIDDEN
 

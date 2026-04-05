@@ -28,7 +28,7 @@ def test_delete_own_food_item(client: TestClient, nutrition_user: User) -> None:
 
     resp = client.delete(
         f"/foods/{food_item.id}",
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.OK
 
@@ -42,6 +42,6 @@ def test_delete_foreign_food_item_not_found(client: TestClient, nutrition_user: 
 
     resp = client.delete(
         f"/foods/{foreign_food.id}",
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.NOT_FOUND

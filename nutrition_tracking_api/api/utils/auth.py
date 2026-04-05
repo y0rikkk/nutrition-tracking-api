@@ -1,6 +1,5 @@
 """Утилиты для аутентификации (JWT, пароли, токены)."""
 
-import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -129,19 +128,3 @@ def decode_token(token: str) -> dict:
         raise AuthTokenExpiredError from e
     except jwt.exceptions.InvalidTokenError as e:
         raise AuthTokenValidateError from e
-
-
-def create_token(username: str) -> str:
-    """
-    Создать уникальный service token для сервисных пользователей.
-
-    Args:
-    ----
-        username: Имя пользователя
-
-    Returns:
-    -------
-        Уникальный токен вида svc-{username}-{random_hex}
-
-    """
-    return f"svc-{username}-{secrets.token_hex(16)}"

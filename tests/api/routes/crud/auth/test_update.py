@@ -50,7 +50,7 @@ def test_update_add_actions_author(
     resp = client.patch(
         f"{path}{model_object.id}",
         json=data.model_dump(exclude_unset=True),
-        headers={"Authorization": f"Bearer {superuser.access_token}"},
+        headers={"Authorization": f"Bearer {superuser.access_token}"},  # type: ignore[attr-defined]
     )
     assert resp.status_code == HTTPStatus.OK
     if model_object.add_actions_author:

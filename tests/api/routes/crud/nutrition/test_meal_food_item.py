@@ -21,7 +21,7 @@ def test_create_meal_food_item_simple(
     result = client.post(
         "/meal-items/",
         content=meal_food_item_payload.model_dump_json(),
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     assert result.json()["id"]
@@ -39,7 +39,7 @@ def test_create_with_food_item_auto_calc(client: TestClient, nutrition_user: Use
     result = client.post(
         "/meal-items/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
 
@@ -66,7 +66,7 @@ def test_create_via_meal_convenience_endpoint(client: TestClient, nutrition_user
     result = client.post(
         f"/meals/{meal_entry.id}/items/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     assert result.json()["meal_entry_id"] == str(meal_entry.id)
@@ -115,7 +115,7 @@ def test_create_with_foreign_meal_entry_not_found(
     result = client.post(
         "/meal-items/",
         json=payload,
-        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},
+        headers={"Authorization": f"Bearer {nutrition_user.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.FORBIDDEN
 
@@ -136,7 +136,7 @@ def test_superuser_can_create_for_foreign_meal_entry(
     result = client.post(
         "/meal-items/",
         json=payload,
-        headers={"Authorization": f"Bearer {superuser.access_token}"},
+        headers={"Authorization": f"Bearer {superuser.access_token}"},  # type: ignore[attr-defined]
     )
     assert result.status_code == HTTPStatus.CREATED, result.json()
     assert result.json()["meal_entry_id"] == str(meal_entry.id)
