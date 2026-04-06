@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealSourceEnum, MealTypeEnum
+from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealTypeEnum
 from nutrition_tracking_api.orm.models.base import Base
 from nutrition_tracking_api.orm.models.utils import make_enum_column_type
 
@@ -36,7 +36,6 @@ class MealEntry(Base):
     date: Mapped[date]
     meal_type: Mapped[MealTypeEnum] = mapped_column(make_enum_column_type(MealTypeEnum))
     notes: Mapped[str | None]
-    source: Mapped[MealSourceEnum] = mapped_column(make_enum_column_type(MealSourceEnum), default=MealSourceEnum.manual)
 
     user: Mapped["User"] = relationship("User")
     items: Mapped[list["MealFoodItem"]] = relationship("MealFoodItem", cascade="all, delete-orphan")

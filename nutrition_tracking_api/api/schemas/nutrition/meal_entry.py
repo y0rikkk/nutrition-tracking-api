@@ -20,20 +20,12 @@ class MealTypeEnum(StrEnum):
     snack = "snack"
 
 
-class MealSourceEnum(StrEnum):
-    """Источник данных о приёме пищи."""
-
-    manual = "manual"
-    photo = "photo"
-
-
 class MealEntryCreate(BaseModel):
     """Схема для создания приёма пищи."""
 
     date: datetime.date
     meal_type: MealTypeEnum
     notes: str | None = None
-    source: MealSourceEnum = MealSourceEnum.manual
     user_id: UUID | None = None  # Устанавливается сервером из токена
 
 
@@ -59,7 +51,6 @@ class MealEntryOut(BaseModel):
     date: datetime.date
     meal_type: MealTypeEnum
     notes: str | None
-    source: MealSourceEnum
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -98,5 +89,4 @@ class MealEntryFilter(BasePaginationFilter):
 
     date: datetime.date | None = None
     meal_type: MealTypeEnum | None = None
-    source: MealSourceEnum | None = None
     user_id: UUID | None = None

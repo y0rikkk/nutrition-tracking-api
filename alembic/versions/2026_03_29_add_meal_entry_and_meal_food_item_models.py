@@ -23,7 +23,6 @@ def upgrade() -> None:
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('meal_type', sa.Enum('breakfast', 'lunch', 'dinner', 'snack', name='mealtypeenum', native_enum=False, length=50), nullable=False),
     sa.Column('notes', sa.String(), nullable=True),
-    sa.Column('source', sa.Enum('manual', 'photo', name='mealsourceenum', native_enum=False, length=50), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),

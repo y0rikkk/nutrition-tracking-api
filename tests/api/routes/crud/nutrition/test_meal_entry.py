@@ -44,7 +44,6 @@ def test_create_meal_entry_with_foreign_user_id_forbidden(client: TestClient, nu
     payload = {
         "date": str(datetime.datetime.now().date()),
         "meal_type": "lunch",
-        "source": "manual",
         "user_id": str(user.id),
     }
     result = client.post(
@@ -60,7 +59,6 @@ def test_superuser_can_create_meal_entry_for_other_user(client: TestClient, supe
     payload = {
         "date": str(datetime.datetime.now().date()),
         "meal_type": "lunch",
-        "source": "manual",
         "user_id": str(user.id),
     }
     result = client.post(

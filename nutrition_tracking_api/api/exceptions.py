@@ -103,3 +103,24 @@ class CannotAddByDeletedResourceError(BaseError):
 class CannotChangeDeletedResourceError(BaseError):
     status_code = HTTPStatus.BAD_REQUEST
     detail = "Ресурс удален, обновление невозможно"
+
+
+class LLMServiceError(BaseError):
+    """Ошибка при обращении к LLM сервису."""
+
+    status_code = HTTPStatus.BAD_GATEWAY
+    detail = "Ошибка при обращении к LLM сервису"
+
+
+class PhotoAnalysisError(BaseError):
+    """Не удалось распознать блюда на фото."""
+
+    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
+    detail = "Не удалось распознать блюда на фото"
+
+
+class UnsupportedImageFormatError(BaseError):
+    """Неподдерживаемый формат изображения."""
+
+    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
+    detail = "Поддерживаются только jpeg, png, webp"

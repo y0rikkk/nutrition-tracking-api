@@ -1,9 +1,11 @@
 """OpenRouter API client."""
 
+from typing import Any
+
 import httpx
-from fastapi import HTTPException
 from loguru import logger
 
+from nutrition_tracking_api.api.exceptions import LLMServiceError
 from nutrition_tracking_api.settings import settings
 
 
@@ -15,7 +17,7 @@ class OpenRouterClient:
         self.model = settings.OPENROUTER_MODEL
         self.base_url = settings.OPENROUTER_BASE_URL
 
-    def chat(self, messages: list[dict[str, str]]) -> str:
+    def chat(self, messages: list[dict[str, Any]]) -> str:
         """Отправить список сообщений в LLM и получить текстовый ответ."""
         try:
             response = httpx.post(
@@ -31,7 +33,7 @@ class OpenRouterClient:
             return str(response.json()["choices"][0]["message"]["content"])
         except httpx.HTTPStatusError as e:
             logger.error("OpenRouter HTTP error: {} {}", e.response.status_code, e.response.text)
-            raise HTTPException(status_code=502, detail="LLM service error") from e
+            raise LLMServiceError from e
         except Exception as e:
             logger.error("OpenRouter unexpected error: {}", e)
-            raise HTTPException(status_code=502, detail="LLM service unavailable") from e
+            raise LLMServiceError from e

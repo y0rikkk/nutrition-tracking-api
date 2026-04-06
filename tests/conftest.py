@@ -347,6 +347,11 @@ def nutrition_user(
             actions=["POST"],
             matchers=None,
         ),
+        PolicyFactory(
+            targets=["/foods/analyze-photo/"],
+            actions=["POST"],
+            matchers=None,
+        ),
     ]:
         test_role_service.add_policy(role_id=r.id, policy_id=p.id)  # type: ignore[arg-type]
 

@@ -43,3 +43,5 @@ cache_version.json
 config.json
 lock
 refresh.lock
+
+scripts/

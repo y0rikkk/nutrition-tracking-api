@@ -6,7 +6,6 @@ import factory
 
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import (
     MealEntryCreate,
-    MealSourceEnum,
     MealTypeEnum,
 )
 from nutrition_tracking_api.orm.models.nutrition import MealEntry
@@ -24,7 +23,6 @@ class MealEntryPayloadFactory(factory.Factory):
     user_id = factory.SelfAttribute("user.id")
     date = factory.LazyFunction(datetime.date.today)
     meal_type = MealTypeEnum.lunch
-    source = MealSourceEnum.manual
     notes = None
 
 

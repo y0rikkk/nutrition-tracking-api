@@ -28,6 +28,7 @@ sentry-sdk = "^2.52.0"
 pyjwt = {extras = ["crypto"], version = "^2.11.0"}
 httpx = "^0.25.0"
 bcrypt = "5.0.0"
+python-multipart = "^0.0.24"
 
 [tool.poetry.group.dev.dependencies]
 # Testing

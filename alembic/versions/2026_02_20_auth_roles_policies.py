@@ -205,6 +205,17 @@ def upgrade() -> None:
             "created_at": now,
             "updated_at": now,
         },
+        {
+            "id": uuid.uuid4(),
+            "name": "nutrition-photo-analysis-access",
+            "description": "Распознавание блюд по фото (vision LLM)",
+            "targets": ["/foods/analyze-photo/"],
+            "actions": ["POST"],
+            "matchers": None,
+            "options": None,
+            "created_at": now,
+            "updated_at": now,
+        },
     ]
 
     op.bulk_insert(policy_table, policies)
