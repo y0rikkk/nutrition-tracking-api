@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from nutrition_tracking_api.api.routes.nutrition import (
+    advice,
     dashboard,
     food_item,
     meal_entry,
@@ -12,6 +13,7 @@ from nutrition_tracking_api.api.routes.nutrition import (
 )
 
 nutrition_router = APIRouter()
+nutrition_router.include_router(advice.router)
 nutrition_router.include_router(dashboard.router)
 nutrition_router.include_router(food_item.router)
 nutrition_router.include_router(meal_entry.router)

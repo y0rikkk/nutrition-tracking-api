@@ -194,6 +194,17 @@ def upgrade() -> None:
             "created_at": now,
             "updated_at": now,
         },
+        {
+            "id": uuid.uuid4(),
+            "name": "nutrition-advice-access",
+            "description": "Доступ к диетологическим советам (LLM)",
+            "targets": ["/advice/"],
+            "actions": ["POST"],
+            "matchers": None,
+            "options": None,
+            "created_at": now,
+            "updated_at": now,
+        },
     ]
 
     op.bulk_insert(policy_table, policies)

@@ -1,8 +1,11 @@
 """Сервис для Dashboard."""
 
 import datetime as dt
-from typing import Any
 
+from sqlalchemy.orm import Session
+
+from nutrition_tracking_api.api.schemas.auth.common import PermissionRules
+from nutrition_tracking_api.api.schemas.auth.user import UserOut
 from nutrition_tracking_api.api.schemas.nutrition.dashboard import (
     DashboardOut,
     GoalProgress,
@@ -16,6 +19,7 @@ from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import Nutritio
 from nutrition_tracking_api.api.services.nutrition.meal_entry import MealEntryService
 from nutrition_tracking_api.api.services.nutrition.nutrition_goal import NutritionGoalService
 from nutrition_tracking_api.api.services.nutrition.weight_log import WeightLogService
+from nutrition_tracking_api.app_schemas import RequestState
 
 
 class DashboardService:
@@ -23,10 +27,10 @@ class DashboardService:
 
     def __init__(
         self,
-        session: Any,
-        user: Any,
-        rules: Any,
-        request_state: Any = None,
+        session: Session,
+        user: UserOut | None = None,
+        rules: list[PermissionRules] | None = None,
+        request_state: RequestState | None = None,
     ) -> None:
         self.meal_service = MealEntryService(session, rules, user, request_state)
         self.goal_service = NutritionGoalService(session, rules, user, request_state)

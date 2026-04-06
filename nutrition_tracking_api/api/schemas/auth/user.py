@@ -79,11 +79,11 @@ class UserOut(BaseModel):
     is_superuser: bool
     email: str | None
     full_name: str | None
-    birth_date: dt.date | None
-    gender: GenderEnum | None
-    height_cm: float | None
-    weight_kg: float | None
-    activity_level: ActivityLevelEnum | None
+    birth_date: dt.date
+    gender: GenderEnum
+    height_cm: float
+    weight_kg: float
+    activity_level: ActivityLevelEnum
     roles: list[RoleOut]
     role_ids: list[UUID]
     created_at: datetime
