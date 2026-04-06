@@ -34,7 +34,6 @@ class MealEntryCreate(BaseModel):
     meal_type: MealTypeEnum
     notes: str | None = None
     source: MealSourceEnum = MealSourceEnum.manual
-    photo_url: str | None = None
     user_id: UUID | None = None  # Устанавливается сервером из токена
 
 
@@ -61,7 +60,6 @@ class MealEntryOut(BaseModel):
     meal_type: MealTypeEnum
     notes: str | None
     source: MealSourceEnum
-    photo_url: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 

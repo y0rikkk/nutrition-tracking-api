@@ -37,7 +37,6 @@ class MealEntry(Base):
     meal_type: Mapped[MealTypeEnum] = mapped_column(make_enum_column_type(MealTypeEnum))
     notes: Mapped[str | None]
     source: Mapped[MealSourceEnum] = mapped_column(make_enum_column_type(MealSourceEnum), default=MealSourceEnum.manual)
-    photo_url: Mapped[str | None]
 
     user: Mapped["User"] = relationship("User")
     items: Mapped[list["MealFoodItem"]] = relationship("MealFoodItem", cascade="all, delete-orphan")

@@ -26,7 +26,6 @@ class MealEntryPayloadFactory(factory.Factory):
     meal_type = MealTypeEnum.lunch
     source = MealSourceEnum.manual
     notes = None
-    photo_url = None
 
 
 class MealEntryFactory(MealEntryPayloadFactory, BaseSQLAlchemyModelFactory):
