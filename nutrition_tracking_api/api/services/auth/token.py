@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
 from nutrition_tracking_api.api.crud.auth.token import RefreshTokenCRUD
@@ -97,7 +98,10 @@ class TokenService:
         if not jti:
             raise AuthTokenValidateError
 
-        db_token = self.refresh_crud.get_by_jti(jti)
+        try:
+            db_token = self.refresh_crud.get_by_jti(jti)
+        except NoResultFound:
+            raise AuthTokenExpiredError from None
         if db_token.is_revoked:
             raise AuthTokenExpiredError
 
