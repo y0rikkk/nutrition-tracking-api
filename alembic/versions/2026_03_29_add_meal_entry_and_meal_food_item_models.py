@@ -27,7 +27,8 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], name=op.f('fk_meal_entry_user_id_user'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_meal_entry'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_meal_entry')),
+    sa.UniqueConstraint('user_id', 'date', 'meal_type', name='_unique_user_date_meal_type')
     )
     op.create_index(op.f('ix_meal_entry_user_id'), 'meal_entry', ['user_id'], unique=False)
     op.create_table('meal_food_item',

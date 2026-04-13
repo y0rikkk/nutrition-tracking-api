@@ -4,7 +4,7 @@ from datetime import date
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealTypeEnum
@@ -31,6 +31,8 @@ class MealEntry(Base):
     """Приём пищи пользователя за конкретный день."""
 
     add_actions_author = False
+
+    __table_args__ = (UniqueConstraint("user_id", "date", "meal_type", name="_unique_user_date_meal_type"),)
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
     date: Mapped[date]
