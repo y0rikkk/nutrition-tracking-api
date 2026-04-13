@@ -45,7 +45,7 @@ def test_create_with_food_item_auto_calc(client: TestClient, nutrition_user: Use
 
     data = result.json()
     assert data["food_item_id"] == str(food_item.id)
-    assert data["custom_name"] == food_item.name
+    assert data["name"] == food_item.name
     assert data["calories_kcal"] == round(food_item.calories_per_100g * 2, 2)
     assert data["protein_g"] == round(food_item.protein_per_100g * 2, 2)
     assert data["fat_g"] == round(food_item.fat_per_100g * 2, 2)
@@ -56,7 +56,7 @@ def test_create_via_meal_convenience_endpoint(client: TestClient, nutrition_user
     """POST /meals/{id}/items/ — meal_entry_id берётся из URL, не из тела."""
     meal_entry = MealEntryFactory(user=nutrition_user)
     payload = {
-        "custom_name": "Тарелка супа",
+        "name": "Тарелка супа",
         "amount_g": 300.0,
         "calories_kcal": 120.0,
         "protein_g": 5.0,
@@ -72,8 +72,8 @@ def test_create_via_meal_convenience_endpoint(client: TestClient, nutrition_user
     assert result.json()["meal_entry_id"] == str(meal_entry.id)
 
 
-def test_create_manual_without_custom_name_fails(client: TestClient, meal_entry: MealEntry) -> None:
-    """Ручной ввод без custom_name должен вернуть 422 (Pydantic validation)."""
+def test_create_manual_without_name_fails(client: TestClient, meal_entry: MealEntry) -> None:
+    """Ручной ввод без name должен вернуть 422 (Pydantic validation)."""
     payload = {
         "meal_entry_id": str(meal_entry.id),
         "amount_g": 100.0,
@@ -84,14 +84,14 @@ def test_create_manual_without_custom_name_fails(client: TestClient, meal_entry:
     }
     result = client.post("/meal-items/", json=payload)
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert "custom_name обязателен при ручном вводе" in result.json()["detail"][0]["msg"]
+    assert "name обязателен при ручном вводе" in result.json()["detail"][0]["msg"]
 
 
 def test_create_manual_without_kbju_fails(client: TestClient, meal_entry: MealEntry) -> None:
     """Ручной ввод без КБЖУ должен вернуть 422 (Pydantic validation)."""
     payload = {
         "meal_entry_id": str(meal_entry.id),
-        "custom_name": "Домашний суп",
+        "name": "Домашний суп",
         "amount_g": 300.0,
     }
     result = client.post("/meal-items/", json=payload)
@@ -105,7 +105,7 @@ def test_create_with_foreign_meal_entry_not_found(
     """Нельзя добавить item в meal_entry другого пользователя — должен вернуть 403."""
     payload = {
         "meal_entry_id": str(meal_entry.id),
-        "custom_name": "Чужой суп",
+        "name": "Чужой суп",
         "amount_g": 100.0,
         "calories_kcal": 50.0,
         "protein_g": 2.0,
@@ -126,7 +126,7 @@ def test_superuser_can_create_for_foreign_meal_entry(
     """Суперюзер может добавить item в meal_entry любого пользователя."""
     payload = {
         "meal_entry_id": str(meal_entry.id),
-        "custom_name": "Суп суперюзера",
+        "name": "Суп суперюзера",
         "amount_g": 100.0,
         "calories_kcal": 50.0,
         "protein_g": 2.0,

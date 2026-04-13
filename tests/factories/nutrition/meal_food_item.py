@@ -16,7 +16,7 @@ class MealFoodItemPayloadFactory(factory.Factory):
 
     meal_entry = factory.SubFactory(MealEntryFactory)
     meal_entry_id = factory.SelfAttribute("meal_entry.id")
-    custom_name = factory.Sequence(lambda n: f"dish_{n}")
+    name = factory.Sequence(lambda n: f"dish_{n}")
     amount_g = 100.0
     calories_kcal = 150.0
     protein_g = 10.0

@@ -35,7 +35,7 @@ class MealFoodItemService(
         if create_data.food_item_id is not None:
             food_item = FoodItemCRUD(self.resource_crud.session).get(create_data.food_item_id, with_for_update=False)
             factor = create_data.amount_g / 100
-            create_data.custom_name = food_item.name
+            create_data.name = food_item.name
             create_data.calories_kcal = round(food_item.calories_per_100g * factor, 2)
             create_data.protein_g = round(food_item.protein_per_100g * factor, 2)
             create_data.fat_g = round(food_item.fat_per_100g * factor, 2)

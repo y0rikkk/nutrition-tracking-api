@@ -14,7 +14,7 @@ class MealFoodItemCreate(BaseModel):
 
     meal_entry_id: UUID | None = None  # Устанавливается из URL path
     food_item_id: UUID | None = None
-    custom_name: str | None = None
+    name: str | None = None
     amount_g: float = Field(..., gt=0)
     calories_kcal: float | None = Field(None, ge=0)  # Авто-расчёт если food_item_id указан
     protein_g: float | None = Field(None, ge=0)
@@ -23,10 +23,10 @@ class MealFoodItemCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_entry_type(self) -> "MealFoodItemCreate":
-        """Валидация: при ручном вводе custom_name и все КБЖУ обязательны."""
+        """Валидация: при ручном вводе name и все КБЖУ обязательны."""
         if self.food_item_id is None:
-            if not self.custom_name:
-                raise ValueError("custom_name обязателен при ручном вводе")  # noqa: TRY003 EM101
+            if not self.name:
+                raise ValueError("name обязателен при ручном вводе")  # noqa: TRY003 EM101
             if any(v is None for v in [self.calories_kcal, self.protein_g, self.fat_g, self.carbs_g]):
                 raise ValueError("Все значения КБЖУ обязательны при ручном вводе")  # noqa: TRY003 EM101
         return self
@@ -35,7 +35,7 @@ class MealFoodItemCreate(BaseModel):
 class MealFoodItemUpdate(BaseModel):
     """Схема для обновления продукта в приёме пищи."""
 
-    custom_name: str | None = None
+    name: str | None = None
     amount_g: float | None = Field(None, gt=0)
     calories_kcal: float | None = Field(None, ge=0)
     protein_g: float | None = Field(None, ge=0)
@@ -53,7 +53,7 @@ class MealFoodItemOut(BaseModel):
     id: UUID
     meal_entry_id: UUID
     food_item_id: UUID | None
-    custom_name: str | None
+    name: str | None
     amount_g: float
     calories_kcal: float
     protein_g: float

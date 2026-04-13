@@ -50,7 +50,7 @@ class MealFoodItem(Base):
 
     meal_entry_id: Mapped[UUID] = mapped_column(ForeignKey("meal_entry.id", ondelete="CASCADE"), index=True)
     food_item_id: Mapped[UUID | None] = mapped_column(ForeignKey("food_item.id", ondelete="SET NULL"), index=True)
-    custom_name: Mapped[str | None]
+    name: Mapped[str | None]
     amount_g: Mapped[float]
     calories_kcal: Mapped[float]
     protein_g: Mapped[float]

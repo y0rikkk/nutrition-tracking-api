@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.create_table('meal_food_item',
     sa.Column('meal_entry_id', sa.Uuid(), nullable=False),
     sa.Column('food_item_id', sa.Uuid(), nullable=True),
-    sa.Column('custom_name', sa.String(), nullable=True),
+    sa.Column('name', sa.String(), nullable=True),
     sa.Column('amount_g', sa.Float(), nullable=False),
     sa.Column('calories_kcal', sa.Float(), nullable=False),
     sa.Column('protein_g', sa.Float(), nullable=False),
