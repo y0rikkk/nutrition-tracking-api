@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from tests.factories.nutrition.meal_entry import MealEntryFactory
 from tests.factories.nutrition.meal_food_item import MealFoodItemFactory
 from tests.factories.nutrition.nutrition_goal import NutritionGoalFactory
-from tests.factories.nutrition.weight_log import WeightLogFactory
 
 if TYPE_CHECKING:
     from nutrition_tracking_api.orm.models.auth import User
@@ -50,7 +49,6 @@ def test_dashboard_empty_day(client: TestClient, nutrition_user: "User") -> None
     assert data["meal_breakdown"] == []
     assert data["goal"] is None
     assert data["goal_progress"] is None
-    assert data["latest_weight"] is None
 
 
 def test_dashboard_with_meals(client: TestClient, nutrition_user: "User") -> None:
@@ -129,24 +127,6 @@ def test_dashboard_goal_progress_over_100(client: TestClient, nutrition_user: "U
 # ---------------------------------------------------------------------------
 # Вес
 # ---------------------------------------------------------------------------
-
-
-def test_dashboard_latest_weight(client: TestClient, nutrition_user: "User") -> None:
-    """Несколько WeightLog → latest_weight по самой поздней дате."""
-    WeightLogFactory(user=nutrition_user, date=YESTERDAY, weight_kg=75.0)
-    WeightLogFactory(user=nutrition_user, date=TODAY, weight_kg=74.5)
-
-    resp = client.get("/dashboard/", params={"date": str(TODAY)}, headers=_headers(nutrition_user))
-
-    assert resp.status_code == HTTPStatus.OK
-    assert resp.json()["latest_weight"]["weight_kg"] == 74.5
-
-
-def test_dashboard_no_weight(client: TestClient, nutrition_user: "User") -> None:
-    """Нет WeightLog → latest_weight равен None."""
-    resp = client.get("/dashboard/", params={"date": str(TODAY)}, headers=_headers(nutrition_user))
-
-    assert resp.json()["latest_weight"] is None
 
 
 # ---------------------------------------------------------------------------

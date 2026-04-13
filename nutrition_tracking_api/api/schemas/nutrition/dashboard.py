@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict
 
 from nutrition_tracking_api.api.schemas.nutrition.meal_entry import MealEntryDetailOut, MealTypeEnum
 from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import NutritionGoalOut
-from nutrition_tracking_api.api.schemas.nutrition.weight_log import WeightLogOut
 
 
 class MacroTotals(BaseModel):
@@ -54,4 +53,3 @@ class DashboardOut(BaseModel):
     goal_progress: GoalProgress | None
     meal_breakdown: list[MealBreakdown]
     meals: list[MealEntryDetailOut]
-    latest_weight: WeightLogOut | None

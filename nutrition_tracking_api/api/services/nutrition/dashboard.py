@@ -18,7 +18,6 @@ from nutrition_tracking_api.api.schemas.nutrition.meal_food_item import MealFood
 from nutrition_tracking_api.api.schemas.nutrition.nutrition_goal import NutritionGoalOut
 from nutrition_tracking_api.api.services.nutrition.meal_entry import MealEntryService
 from nutrition_tracking_api.api.services.nutrition.nutrition_goal import NutritionGoalService
-from nutrition_tracking_api.api.services.nutrition.weight_log import WeightLogService
 from nutrition_tracking_api.app_schemas import RequestState
 
 
@@ -34,13 +33,11 @@ class DashboardService:
     ) -> None:
         self.meal_service = MealEntryService(session, rules, user, request_state)
         self.goal_service = NutritionGoalService(session, rules, user, request_state)
-        self.weight_service = WeightLogService(session, rules, user, request_state)
 
     def get_dashboard(self, date: dt.date) -> DashboardOut:
         """Собрать дашборд за указанную дату."""
         meals = self.meal_service.get_daily_meals(date)
         active_goal = self.goal_service.get_active_goal()
-        latest_weight = self.weight_service.get_latest()
 
         all_items = [item for meal in meals for item in meal.items]
         consumed = self._sum_macros(all_items)
@@ -52,7 +49,6 @@ class DashboardService:
             goal_progress=self._compute_goal_progress(consumed, active_goal) if active_goal else None,
             meal_breakdown=self._compute_meal_breakdown(meals),
             meals=meals,
-            latest_weight=latest_weight,
         )
 
     def _sum_macros(self, items: list[MealFoodItemOut]) -> MacroTotals:
