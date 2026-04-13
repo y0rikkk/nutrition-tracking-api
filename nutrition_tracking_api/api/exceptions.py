@@ -112,11 +112,18 @@ class LLMServiceError(BaseError):
     detail = "Ошибка при обращении к LLM сервису"
 
 
-class PhotoAnalysisError(BaseError):
-    """Не удалось распознать блюда на фото."""
+class PhotoAnalysisInvalidResponseError(BaseError):
+    """LLM вернул невалидный ответ (не JSON или не соответствует схеме)."""
 
     status_code = HTTPStatus.UNPROCESSABLE_ENTITY
-    detail = "Не удалось распознать блюда на фото"
+    detail = "LLM вернул невалидный ответ, попробуйте другое фото"
+
+
+class PhotoAnalysisNoDishesError(BaseError):
+    """На фото не распознано ни одного блюда."""
+
+    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
+    detail = "На фото не распознано ни одного блюда"
 
 
 class UnsupportedImageFormatError(BaseError):

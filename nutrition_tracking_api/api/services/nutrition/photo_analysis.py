@@ -8,7 +8,11 @@ from fastapi import UploadFile
 from loguru import logger
 from pydantic import ValidationError
 
-from nutrition_tracking_api.api.exceptions import PhotoAnalysisError, UnsupportedImageFormatError
+from nutrition_tracking_api.api.exceptions import (
+    PhotoAnalysisInvalidResponseError,
+    PhotoAnalysisNoDishesError,
+    UnsupportedImageFormatError,
+)
 from nutrition_tracking_api.api.schemas.nutrition.photo_analysis import PhotoAnalysisOut
 from nutrition_tracking_api.integrations.openrouter import OpenRouterClient
 
@@ -53,16 +57,15 @@ class PhotoAnalysisService:
             data = json.loads(cleaned)
         except json.JSONDecodeError:
             logger.warning("PhotoAnalysis: LLM returned non-JSON: {}", raw[:200])
-            raise PhotoAnalysisError from None
+            raise PhotoAnalysisInvalidResponseError from None
 
         try:
             result = PhotoAnalysisOut(**data)
         except (ValidationError, TypeError):
             logger.warning("PhotoAnalysis: LLM JSON failed validation: {}", data)
-            raise PhotoAnalysisError from None
+            raise PhotoAnalysisInvalidResponseError from None
 
         if not result.dishes:
-            logger.warning("PhotoAnalysis: LLM returned empty dishes: {}", data)
-            raise PhotoAnalysisError
+            raise PhotoAnalysisNoDishesError
 
         return result

@@ -81,7 +81,7 @@ def test_analyze_photo_invalid_json_returns_422(
     resp = _upload(client, nutrition_user, _FAKE_JPEG)
 
     assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  # type: ignore[attr-defined]
-    assert "распознать" in resp.json()["detail"]  # type: ignore[attr-defined]
+    assert "невалидный" in resp.json()["detail"].lower()  # type: ignore[attr-defined]
 
 
 def test_analyze_photo_empty_dishes_returns_422(
@@ -95,6 +95,7 @@ def test_analyze_photo_empty_dishes_returns_422(
     resp = _upload(client, nutrition_user, _FAKE_JPEG)
 
     assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  # type: ignore[attr-defined]
+    assert "не распознано" in resp.json()["detail"].lower()  # type: ignore[attr-defined]
 
 
 def test_analyze_photo_unsupported_format_returns_422(
