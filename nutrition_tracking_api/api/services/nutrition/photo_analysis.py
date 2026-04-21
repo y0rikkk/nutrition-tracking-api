@@ -18,7 +18,7 @@ from nutrition_tracking_api.integrations.openrouter import OpenRouterClient
 
 _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
-_SYSTEM_PROMPT = "Ты ассистент-диетолог. Анализируй фото еды и возвращай ТОЛЬКО валидный JSON без markdown-обёрток."
+_SYSTEM_PROMPT = "Ты ассистент-диетолог. Анализируй фото еды и возвращай ТОЛЬКО валидный JSON без markdown-обёрток. Названия пиши на РУССКОМ ЯЗЫКЕ."
 
 _USER_PROMPT = (
     "Определи все блюда и продукты питания на фото. Верни JSON строго в формате:\n"

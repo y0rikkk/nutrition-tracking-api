@@ -26,7 +26,7 @@ class OpenRouterClient:
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
                 },
-                json={"model": self.model, "messages": messages},
+                json={"model": self.model, "messages": messages, "reasoning": {"enabled": False}},
                 timeout=60.0,
             )
             response.raise_for_status()
